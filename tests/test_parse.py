@@ -3,8 +3,8 @@ from typing import List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
-from pydantic_argparse import create_parser
-from pydantic_argparse.parse import get_groupby_field_names
+from pydantic_argparse_builder import build_parser
+from pydantic_argparse_builder.parse import get_groupby_field_names
 
 
 def test_tuple():
@@ -12,7 +12,7 @@ def test_tuple():
         param: Tuple[str, str, str]
 
     parser = ArgumentParser()
-    create_parser(parser, Config)
+    build_parser(parser, Config)
 
     # param
     a = parser._actions
@@ -44,7 +44,7 @@ def test_union():
         param: Union[str, int]
 
     parser = ArgumentParser()
-    create_parser(parser, Config)
+    build_parser(parser, Config)
 
     # param
     a = parser._actions
@@ -90,7 +90,7 @@ def test_argparse():
         param_5: List[str] = Field(description="description of the param_4")
 
     parser = ArgumentParser()
-    create_parser(parser, Config)
+    build_parser(parser, Config)
     a = parser._actions
 
     # param
@@ -195,7 +195,7 @@ def test_argparse_with_group():
         param_5: List[str] = Field(description="description of the param_4")
 
     parser = ArgumentParser()
-    create_parser(parser, Config2)
+    build_parser(parser, Config2)
     a = parser._actions
 
     assert len(parser._action_groups) == 4
