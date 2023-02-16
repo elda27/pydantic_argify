@@ -1,6 +1,6 @@
 from argparse import Action, ArgumentParser
 from functools import wraps
-from typing import Any, Callable, Dict, List, Type, get_args, get_origin
+from typing import Any, Callable, Dict, List, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel
 from pydantic.fields import (
@@ -64,16 +64,25 @@ class StoreKeywordParam(Action):
     """Store keyword parameters as a dict"""
 
     def __call__(
-        self, parser: ArgumentParser, namespace: Any, values: str, option_strings=None
+        self,
+        parser: ArgumentParser,
+        namespace: Any,
+        values: Union[str, List[str]],
+        option_strings=None,
     ):
         param_dict = getattr(namespace, self.dest, [])
         if param_dict is None:
             param_dict = {}
+        if not isinstance(values, list):
+            values = [values]
 
-        parts = values.split("=")
-        if len(parts) < 2:
-            raise ValueError("Wrong format of keyword parameters. Expected: key=value")
-        param_dict[parts[0]] = "=".join(parts[1:])
+        for value in values:
+            parts = value.split("=")
+            if len(parts) < 2:
+                raise ValueError(
+                    "Wrong format of keyword parameters. Expected: key=value"
+                )
+            param_dict[parts[0]] = "=".join(parts[1:])
         setattr(namespace, self.dest, param_dict)
 
 
@@ -120,6 +129,11 @@ def build_parser(
                 kwargs["nargs"] = "*"
         elif field.shape in (SHAPE_DICT, SHAPE_MAPPING):
             kwargs["action"] = StoreKeywordParam
+            type_ = str
+            if field.required:
+                kwargs["nargs"] = "+"
+            else:
+                kwargs["nargs"] = "*"
         elif field.shape == SHAPE_TUPLE:
             args = get_args(field.type_)
             type_ = args[0]

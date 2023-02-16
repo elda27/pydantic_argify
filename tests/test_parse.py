@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
@@ -77,6 +77,37 @@ def test_union():
     assert Config(
         **{
             "param": 10,
+        }
+    ) == Config.parse_obj(vars(args))
+
+
+def test_dict():
+    class Config(BaseModel):
+        param: Dict[str, int]
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    # param
+    a = parser._actions
+    assert "--param" in a[1].option_strings
+    assert "param" == a[1].dest
+    assert a[1].type is str
+    assert a[1].default is None
+    assert a[1].required
+    assert a[1].nargs == "+"
+    assert a[1].help is None
+
+    args = parser.parse_args(
+        [
+            "--param",
+            "key1=10",
+            "key2=20",
+        ]
+    )
+    assert Config(
+        **{
+            "param": {"key1": 10, "key2": 20},
         }
     ) == Config.parse_obj(vars(args))
 
