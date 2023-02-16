@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "pydantic-argparse"
+version = "0.1.0"
+description = ""
+authors = ["elda27 <kaz.birdstick@gmail.com>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [{include = "pydantic_argparse"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pydantic = "^1.10.5"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.0.0"
+pytest = "^7.2.1"
+pytest-cov = "^4.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
