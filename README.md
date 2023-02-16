@@ -1,4 +1,4 @@
-# pydantic-argparse
+# pydantic-argparse-builder
 
 Build ArgumentParser from pydantic model.
 
