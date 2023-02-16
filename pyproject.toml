@@ -3,7 +3,7 @@ name = "pydantic-argparse-builder"
 version = "0.1.0"
 description = "Build ArgumentParser from pydantic model."
 authors = ["elda27 <kaz.birdstick@gmail.com>"]
-license = "Apache 2.0"
+license = "Apache-2.0"
 readme = "README.md"
 packages = [{include = "pydantic_argparse_builder"}]
 
