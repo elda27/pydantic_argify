@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "pydantic-argparse"
+name = "pydantic-argparse-builder"
 version = "0.1.0"
-description = ""
+description = "Build ArgumentParser from pydantic model."
 authors = ["elda27 <kaz.birdstick@gmail.com>"]
 license = "Apache 2.0"
 readme = "README.md"
-packages = [{include = "pydantic_argparse"}]
+packages = [{include = "pydantic_argparse_builder"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
