@@ -1,11 +1,15 @@
 # pydantic-argparse-builder
 
+[![codecov](https://codecov.io/gh/elda27/pydantic_argparse_builder/branch/main/graph/badge.svg?token=GLqGNtE7Df)](https://codecov.io/gh/elda27/pydantic_argparse_builder)
+
 Build ArgumentParser from pydantic model.
 
 ## What's difference with other projects.
 
 This project focuses on creating an argument parser from the pydantic model.
-You can easily add a sub parser.
+Many other projects hide `ArgumentParser` in the library, but it is difficult to use in complicated cases.
+For example nested sub parser; i.e. `aws s3 cp <some options>`, or nested pydantic model is not supported.
+This library achieve that you can easily add complicate uses.
 
 ## Example 1
 
@@ -68,3 +72,8 @@ positional arguments:
 optional arguments:
   -h, --help    show this help message and exit
 ```
+
+## Future works
+
+- [ ]: High level api such as click
+- [ ]: Options completion for bash

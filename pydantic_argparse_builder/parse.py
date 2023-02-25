@@ -152,15 +152,7 @@ def build_parser(
         if field.field_info.default is not Undefined:
             kwargs["default"] = field.field_info.default
 
-        # Set abbreviated parameter
-        args = [f"--{name.replace('_', '-')}"]
-        if auto_abbrev:
-            abbrev_arg = f"-{name[0]}"
-            if abbrev_arg not in exist_args:
-                args.append(abbrev_arg)
-                exist_args.append(abbrev_arg)
-
-        # Add arguments
+        # If groupby is enabled, create a new parser for each group
         if name in groupby:
             group_name = groupby[name]
             if group_name not in cache_parsers:
@@ -170,10 +162,57 @@ def build_parser(
                 _parser = cache_parsers[group_name]
         else:
             _parser = parser
-        _parser.add_argument(
-            *args,
-            required=field.required,
-            help=field.field_info.description,
-            **kwargs,
-        )
+
+        # Set option args
+        if field.type_ is bool:
+            # Special case for boolean
+            del kwargs["type"]
+            kwargs["dest"] = name
+
+            if field.required:
+                # Create both enable and disable option
+                mutual = _parser.add_mutually_exclusive_group(required=True)
+                args = [f"--enable-{name.replace('_', '-')}"]
+                kwargs["action"] = "store_true"
+                mutual.add_argument(
+                    *args,
+                    help=field.field_info.description,
+                    **kwargs,
+                )
+                args = [f"--disable-{name.replace('_', '-')}"]
+                kwargs["action"] = "store_false"
+                mutual.add_argument(
+                    *args,
+                    help=field.field_info.description,
+                    **kwargs,
+                )
+            else:
+                # Create either one option.
+                if field.get_default():
+                    args = [f"--disable-{name.replace('_', '-')}"]
+                    kwargs["action"] = "store_false"
+                else:
+                    args = [f"--enable-{name.replace('_', '-')}"]
+                    kwargs["action"] = "store_true"
+                _parser.add_argument(
+                    *args,
+                    help=field.field_info.description,
+                    **kwargs,
+                )
+        else:
+            # default case for other types
+            args = [f"--{name.replace('_', '-')}"]
+            # Set abbreviated parameter
+            if auto_abbrev:
+                abbrev_arg = f"-{name[0]}"
+                if abbrev_arg not in exist_args:
+                    args.append(abbrev_arg)
+                    exist_args.append(abbrev_arg)
+
+            _parser.add_argument(
+                *args,
+                required=field.required,
+                help=field.field_info.description,
+                **kwargs,
+            )
     return parser

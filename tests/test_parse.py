@@ -193,6 +193,104 @@ def test_dict():
     ) == Config.parse_obj(vars(args))
 
 
+def test_boolean_mutual():
+    class Config(BaseModel):
+        param: bool
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    # param
+    a = parser._actions
+    assert "--enable-param" in a[1].option_strings
+    assert "param" == a[1].dest
+    assert not a[1].required
+    assert a[1].nargs == 0
+    assert a[1].help is None
+
+    assert "--disable-param" in a[2].option_strings
+    assert "param" == a[2].dest
+    assert not a[2].required
+    assert a[1].nargs == 0
+    assert a[2].help is None
+
+    args = parser.parse_args(
+        [
+            "--enable-param",
+        ]
+    )
+    assert Config(
+        **{
+            "param": True,
+        }
+    ) == Config.parse_obj(vars(args))
+
+    args = parser.parse_args(
+        [
+            "--disable-param",
+        ]
+    )
+    assert Config(
+        **{
+            "param": False,
+        }
+    ) == Config.parse_obj(vars(args))
+
+
+def test_boolean_enable():
+    class Config(BaseModel):
+        param: bool = False
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    # param
+    a = parser._actions
+    assert "--enable-param" in a[1].option_strings
+    assert "param" == a[1].dest
+    assert not a[1].required
+    assert a[1].nargs == 0
+    assert a[1].help is None
+
+    args = parser.parse_args(
+        [
+            "--enable-param",
+        ]
+    )
+    assert Config(
+        **{
+            "param": True,
+        }
+    ) == Config.parse_obj(vars(args))
+
+
+def test_boolean_disable():
+    class Config(BaseModel):
+        param: bool = True
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    # param
+    a = parser._actions
+    assert "--disable-param" in a[1].option_strings
+    assert "param" == a[1].dest
+    assert not a[1].required
+    assert a[1].nargs == 0
+    assert a[1].help is None
+
+    args = parser.parse_args(
+        [
+            "--disable-param",
+        ]
+    )
+    assert Config(
+        **{
+            "param": False,
+        }
+    ) == Config.parse_obj(vars(args))
+
+
 def test_argparse():
     class Config(BaseModel):
         param: str
