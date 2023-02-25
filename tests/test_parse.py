@@ -1,6 +1,8 @@
-from argparse import ArgumentParser
-from typing import Dict, List, Optional, Tuple, Union
+from argparse import ArgumentError, ArgumentParser
+from enum import Enum
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
+import pytest
 from pydantic import BaseModel, Field
 
 from pydantic_argparse_builder import build_parser
@@ -37,6 +39,85 @@ def test_tuple():
             "param": ("value1", "value2", "value3"),
         }
     ) == Config.parse_obj(vars(args))
+
+
+def test_literal():
+    class Config(BaseModel):
+        param: Literal["value1", "value2"]
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    # param
+    a = parser._actions
+    assert "--param" in a[1].option_strings
+    assert "param" == a[1].dest
+    assert a[1].default is None
+    assert a[1].required
+    assert a[1].nargs is None
+    assert a[1].help is None
+
+    args = parser.parse_args(
+        [
+            "--param",
+            "value1",
+        ]
+    )
+    assert Config(
+        **{
+            "param": "value1",
+        }
+    ) == Config.parse_obj(vars(args))
+
+    with pytest.raises((ArgumentError, SystemExit)):
+        parser.parse_args(
+            [
+                "--param",
+                "value3",
+            ]
+        )
+
+
+def test_enum():
+    class TestEnum(str, Enum):
+        One = "one"
+        Two = "two"
+        Three = "three"
+
+    class Config(BaseModel):
+        param: TestEnum
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    # param
+    a = parser._actions
+    assert "--param" in a[1].option_strings
+    assert "param" == a[1].dest
+    assert a[1].default is None
+    assert a[1].required
+    assert a[1].nargs is None
+    assert a[1].help is None
+
+    args = parser.parse_args(
+        [
+            "--param",
+            "one",
+        ]
+    )
+    assert Config(
+        **{
+            "param": TestEnum.One,
+        }
+    ) == Config.parse_obj(vars(args))
+
+    with pytest.raises((ArgumentError, SystemExit)):
+        parser.parse_args(
+            [
+                "--param",
+                "four",
+            ]
+        )
 
 
 def test_union():

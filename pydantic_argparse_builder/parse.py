@@ -1,4 +1,5 @@
 from argparse import Action, ArgumentParser
+from enum import Enum
 from functools import wraps
 from typing import Any, Callable, Dict, List, Type, Union, get_args, get_origin
 
@@ -8,11 +9,12 @@ from pydantic.fields import (
     SHAPE_LIST,
     SHAPE_MAPPING,
     SHAPE_SET,
+    SHAPE_SINGLETON,
     SHAPE_TUPLE,
     ModelField,
     Undefined,
 )
-from pydantic.typing import is_union
+from pydantic.typing import is_literal_type, is_union
 
 
 def get_model_field(model: Type[BaseModel]) -> Dict[str, ModelField]:
@@ -121,7 +123,7 @@ def build_parser(
         kwargs = {}
 
         # Set option of multiple arguments
-        type_ = field.type_
+        kwargs["type"] = field.type_
         if field.shape in (SHAPE_LIST, SHAPE_SET):
             if field.required:
                 kwargs["nargs"] = "+"
@@ -129,17 +131,22 @@ def build_parser(
                 kwargs["nargs"] = "*"
         elif field.shape in (SHAPE_DICT, SHAPE_MAPPING):
             kwargs["action"] = StoreKeywordParam
-            type_ = str
+            kwargs["type"] = str
             if field.required:
                 kwargs["nargs"] = "+"
             else:
                 kwargs["nargs"] = "*"
         elif field.shape == SHAPE_TUPLE:
             args = get_args(field.type_)
-            type_ = args[0]
+            kwargs["type"] = args[0]
             kwargs["nargs"] = len(args)
+        elif field.type_ is type and issubclass(field.type_, Enum):
+            kwargs["choices"] = list(field.type_)
+        elif is_literal_type(field.type_):
+            del kwargs["type"]
+            kwargs["choices"] = get_args(field.type_)
         elif is_union(get_origin(field.type_)):
-            type_ = str  # TODO: Support union type
+            kwargs["type"] = str  # TODO: Support union type
 
         # Set default value
         if field.field_info.default is not Undefined:
@@ -165,7 +172,6 @@ def build_parser(
             _parser = parser
         _parser.add_argument(
             *args,
-            type=type_,
             required=field.required,
             help=field.field_info.description,
             **kwargs,
