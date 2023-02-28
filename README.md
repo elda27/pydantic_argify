@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/pydantic-argparse-builder.svg)](https://badge.fury.io/py/pydantic-argparse-builder)
 [![codecov](https://codecov.io/gh/elda27/pydantic_argparse_builder/branch/main/graph/badge.svg?token=GLqGNtE7Df)](https://codecov.io/gh/elda27/pydantic_argparse_builder)
 [![Downloads](https://static.pepy.tech/badge/pydantic-argparse-builder)](https://pepy.tech/project/pydantic-argparse-builder)
-[![License](https://img.shields.io/pypi/l/latexify-py.svg)](https://github.com/google/latexify_py/blob/main/LICENSE)
+[![License](https://img.shields.io/pypi/l/pydantic-argparse-builder.svg)](https://github.com/google/pydantic_argparse_builder/blob/main/LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Build ArgumentParser from pydantic model.
