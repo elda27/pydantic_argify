@@ -1,6 +1,7 @@
 # pydantic-argparse-builder
 
 [![codecov](https://codecov.io/gh/elda27/pydantic_argparse_builder/branch/main/graph/badge.svg?token=GLqGNtE7Df)](https://codecov.io/gh/elda27/pydantic_argparse_builder)
+[![Downloads](https://static.pepy.tech/badge/pydantic-argparse-builder)](https://pepy.tech/project/pydantic-argparse-builder)
 
 Build ArgumentParser from pydantic model.
 
