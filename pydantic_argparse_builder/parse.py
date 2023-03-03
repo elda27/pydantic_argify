@@ -107,6 +107,8 @@ def build_parser(
         Exclude field, by default []
     auto_abbrev : bool, optional
         Enable abbreviated parameter such as `-h`, by default True
+    groupby: bool, optional
+        If True, inherited basemodels are grouped by class name, by default True
 
     Returns
     -------
