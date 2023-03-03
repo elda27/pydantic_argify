@@ -37,17 +37,17 @@ def wrap_parser_default(func: Callable[[BaseModel], None], model_type: Type[Base
 
 
 def get_groupby_field_names(model: Type[BaseModel]) -> Dict[str, str]:
-    """_summary_
+    """Get field names for groups
 
     Parameters
     ----------
     model : Type[BaseModel]
-        _description_
+        model class
 
     Returns
     -------
     Dict[str, str]
-        _description_
+        pair of field name and group name
     """
     models = []
     for model_type in model.__mro__:
