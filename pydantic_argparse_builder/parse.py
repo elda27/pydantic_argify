@@ -9,7 +9,6 @@ from pydantic.fields import (
     SHAPE_LIST,
     SHAPE_MAPPING,
     SHAPE_SET,
-    SHAPE_SINGLETON,
     SHAPE_TUPLE,
     ModelField,
     Undefined,
@@ -165,10 +164,9 @@ def build_parser(
                     args.append(abbrev_arg)
                     exist_args.append(abbrev_arg)
 
-            parser.add_argument(
+            _parser.add_argument(
                 *args,
                 required=field.required,
-                help=field.field_info.description,
                 **kwargs,
             )
 
