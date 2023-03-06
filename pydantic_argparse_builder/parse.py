@@ -93,7 +93,7 @@ def build_parser(
     model: Type[BaseModel],
     excludes: List[str] = [],
     auto_abbrev: bool = True,
-    groupby: bool = True,
+    groupby_inherit: bool = True,
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
 
@@ -107,7 +107,7 @@ def build_parser(
         Exclude field, by default []
     auto_abbrev : bool, optional
         Enable abbreviated parameter such as `-h`, by default True
-    groupby: bool, optional
+    groupby_inherit: bool, optional
         If True, inherited basemodels are grouped by class name, by default True
 
     Returns
@@ -115,7 +115,7 @@ def build_parser(
     ArgumentParser
         Argument parser object
     """
-    groupby = get_groupby_field_names(model) if groupby else {}
+    groups = get_groupby_field_names(model) if groupby_inherit else {}
     cache_parsers = {}
     exist_args = []
     for name, field in get_model_field(model).items():
@@ -155,8 +155,8 @@ def build_parser(
             kwargs["default"] = field.field_info.default
 
         # If groupby is enabled, create a new parser for each group
-        if name in groupby:
-            group_name = groupby[name]
+        if name in groups:
+            group_name = groups[name]
             if group_name not in cache_parsers:
                 _parser = parser.add_argument_group(group_name)
                 cache_parsers[group_name] = _parser
