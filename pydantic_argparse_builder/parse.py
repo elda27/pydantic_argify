@@ -125,34 +125,11 @@ def build_parser(
         kwargs = {}
 
         # Set option of multiple arguments
-        kwargs["type"] = field.type_
-        if field.shape in (SHAPE_LIST, SHAPE_SET):
-            if field.required:
-                kwargs["nargs"] = "+"
-            else:
-                kwargs["nargs"] = "*"
-        elif field.shape in (SHAPE_DICT, SHAPE_MAPPING):
-            kwargs["action"] = StoreKeywordParam
-            kwargs["type"] = str
-            if field.required:
-                kwargs["nargs"] = "+"
-            else:
-                kwargs["nargs"] = "*"
-        elif field.shape == SHAPE_TUPLE:
-            args = get_args(field.type_)
-            kwargs["type"] = args[0]
-            kwargs["nargs"] = len(args)
-        elif field.type_ is type and issubclass(field.type_, Enum):
-            kwargs["choices"] = list(field.type_)
-        elif is_literal_type(field.type_):
-            del kwargs["type"]
-            kwargs["choices"] = get_args(field.type_)
-        elif is_union(get_origin(field.type_)):
-            kwargs["type"] = str  # TODO: Support union type
+        kwargs.update(**_parse_shape_args(name, field))
 
         # Set default value
         if field.field_info.default is not Undefined:
-            kwargs["default"] = field.field_info.default
+            kwargs["default"] = field.get_default()
 
         # If groupby is enabled, create a new parser for each group
         if name in groups:
@@ -165,6 +142,7 @@ def build_parser(
         else:
             _parser = parser
 
+        kwargs["help"] = field.field_info.description
         # Set option args
         if field.type_ is bool:
             # Special case for boolean
@@ -173,34 +151,10 @@ def build_parser(
 
             if field.required:
                 # Create both enable and disable option
-                mutual = _parser.add_mutually_exclusive_group(required=True)
-                args = [f"--enable-{name.replace('_', '-')}"]
-                kwargs["action"] = "store_true"
-                mutual.add_argument(
-                    *args,
-                    help=field.field_info.description,
-                    **kwargs,
-                )
-                args = [f"--disable-{name.replace('_', '-')}"]
-                kwargs["action"] = "store_false"
-                mutual.add_argument(
-                    *args,
-                    help=field.field_info.description,
-                    **kwargs,
-                )
+                _add_both_options(_parser, name, field, kwargs)
             else:
                 # Create either one option.
-                if field.get_default():
-                    args = [f"--disable-{name.replace('_', '-')}"]
-                    kwargs["action"] = "store_false"
-                else:
-                    args = [f"--enable-{name.replace('_', '-')}"]
-                    kwargs["action"] = "store_true"
-                _parser.add_argument(
-                    *args,
-                    help=field.field_info.description,
-                    **kwargs,
-                )
+                _add_either_option(_parser, name, field, kwargs)
         else:
             # default case for other types
             args = [f"--{name.replace('_', '-')}"]
@@ -211,10 +165,79 @@ def build_parser(
                     args.append(abbrev_arg)
                     exist_args.append(abbrev_arg)
 
-            _parser.add_argument(
+            parser.add_argument(
                 *args,
                 required=field.required,
                 help=field.field_info.description,
                 **kwargs,
             )
+
     return parser
+
+
+def _parse_shape_args(name: str, field: ModelField) -> dict:
+    kwargs = {}
+    kwargs["type"] = field.type_
+    if field.shape in (SHAPE_LIST, SHAPE_SET):
+        if field.required:
+            kwargs["nargs"] = "+"
+        else:
+            kwargs["nargs"] = "*"
+    elif field.shape in (SHAPE_DICT, SHAPE_MAPPING):
+        kwargs["action"] = StoreKeywordParam
+        kwargs["type"] = str
+        if field.required:
+            kwargs["nargs"] = "+"
+        else:
+            kwargs["nargs"] = "*"
+    elif field.shape == SHAPE_TUPLE:
+        args = get_args(field.type_)
+        kwargs["type"] = args[0]
+        kwargs["nargs"] = len(args)
+    elif field.type_ is type and issubclass(field.type_, Enum):
+        kwargs["choices"] = list(field.type_)
+    elif is_literal_type(field.type_):
+        del kwargs["type"]
+        kwargs["choices"] = get_args(field.type_)
+    elif is_union(get_origin(field.type_)):
+        kwargs["type"] = str  # TODO: Support union type
+    return kwargs
+
+
+def _add_both_options(
+    parser: ArgumentParser,
+    name: str,
+    field: ModelField,
+    kwargs: Dict[str, Any],
+):
+    mutual = parser.add_mutually_exclusive_group(required=True)
+    args = [f"--enable-{name.replace('_', '-')}"]
+    kwargs["action"] = "store_true"
+    mutual.add_argument(
+        *args,
+        **kwargs,
+    )
+    args = [f"--disable-{name.replace('_', '-')}"]
+    kwargs["action"] = "store_false"
+    mutual.add_argument(
+        *args,
+        **kwargs,
+    )
+
+
+def _add_either_option(
+    parser: ArgumentParser,
+    name: str,
+    field: ModelField,
+    kwargs: Dict[str, Any],
+):
+    if kwargs["default"]:
+        args = [f"--disable-{name.replace('_', '-')}"]
+        kwargs["action"] = "store_false"
+    else:
+        args = [f"--enable-{name.replace('_', '-')}"]
+        kwargs["action"] = "store_true"
+    parser.add_argument(
+        *args,
+        **kwargs,
+    )
