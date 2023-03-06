@@ -1,7 +1,17 @@
 from argparse import Action, ArgumentParser
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable, Dict, List, Type, Union, get_args, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from pydantic import BaseModel
 from pydantic.fields import (
@@ -173,6 +183,31 @@ def build_parser(
     return parser
 
 
+def get_cli_names(name: str, field: ModelField, prefix: str = "") -> List[str]:
+    """Create cli string from field name.
+
+    Parameters
+    ----------
+    name : str
+        field name
+    field : ModelField
+        field object
+    prefix : str, optional
+        prefix of the default arguments, by default ""
+
+    Returns
+    -------
+    List[str]
+        list of cli arguments
+    """
+    names = field.field_info.extra.get("cli", None)
+    if names is None:
+        names = [prefix + name.replace("_", "-")]
+        if field.has_alias:
+            names.append(prefix + field.alias.replace("_", "-"))
+    return names
+
+
 def _parse_shape_args(name: str, field: ModelField) -> dict:
     kwargs = {}
     kwargs["type"] = field.type_
@@ -209,13 +244,14 @@ def _add_both_options(
     kwargs: Dict[str, Any],
 ):
     mutual = parser.add_mutually_exclusive_group(required=True)
-    args = [f"--enable-{name.replace('_', '-')}"]
+
+    args = get_cli_names(name, field, "--enable-")
     kwargs["action"] = "store_true"
     mutual.add_argument(
         *args,
         **kwargs,
     )
-    args = [f"--disable-{name.replace('_', '-')}"]
+    args = get_cli_names(name, field, "--disable-")
     kwargs["action"] = "store_false"
     mutual.add_argument(
         *args,
@@ -230,10 +266,10 @@ def _add_either_option(
     kwargs: Dict[str, Any],
 ):
     if kwargs["default"]:
-        args = [f"--disable-{name.replace('_', '-')}"]
+        args = get_cli_names(name, field, prefix="--disable-")
         kwargs["action"] = "store_false"
     else:
-        args = [f"--enable-{name.replace('_', '-')}"]
+        args = get_cli_names(name, field, prefix="--enable-")
         kwargs["action"] = "store_true"
     parser.add_argument(
         *args,
