@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from pydantic_argparse_builder import command, entrypoint, main, sub_command
+from pydantic_argparse_builder.cli import get_command_model
 
 
 @pytest.fixture
@@ -14,6 +15,18 @@ def registry():
     _registry.clear()
     yield
     _registry.clear()
+
+
+def test_get_command_model():
+    class Config(BaseModel):
+        name: str
+        age: int
+        is_active: bool
+
+    def launch(config: Config):
+        print(config)
+
+    assert get_command_model(launch) is Config
 
 
 def test_cli_command(registry):
@@ -99,3 +112,77 @@ def test_entrypoint(registry):
     finally:
         sys.argv = argv
     assert count == 2
+
+
+def test_main_with_command(registry):
+    class Config(BaseModel):
+        name: str = None
+        age: int = None
+        is_active: bool = None
+
+    count = 0
+
+    @command
+    def launch(config: Config):
+        nonlocal count
+        count += 1
+
+    assert count == 0
+    try:
+        argv = deepcopy(sys.argv)
+        sys.argv = ["main"]
+        main()
+    finally:
+        sys.argv = argv
+    assert count == 1
+
+
+def test_main_with_sub_command(registry):
+    count = 0
+
+    class Config1(BaseModel):
+        name: str = None
+        age: int = None
+        is_active: bool = None
+
+    @sub_command("launch1")
+    def launch1(config: Config1):
+        nonlocal count
+        count += 1
+
+    class Config2(BaseModel):
+        name: str = None
+        age: int = None
+        is_active: bool = None
+
+    @sub_command("launch2")
+    def launch2(config: Config2):
+        nonlocal count
+        count += 2
+
+    assert count == 0
+    try:
+        argv = deepcopy(sys.argv)
+        sys.argv = ["main"]
+        main()
+    finally:
+        sys.argv = argv
+    assert count == 0
+
+    # launch1
+    try:
+        argv = deepcopy(sys.argv)
+        sys.argv = ["main", "launch1"]
+        main()
+    finally:
+        sys.argv = argv
+    assert count == 1
+
+    # launch2
+    try:
+        argv = deepcopy(sys.argv)
+        sys.argv = ["main", "launch2"]
+        main()
+    finally:
+        sys.argv = argv
+    assert count == 3

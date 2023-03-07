@@ -43,6 +43,10 @@ def main():
             build_parser(subparser, get_command_model(callback))
     args = parser.parse_args()
 
+    if args._command not in _registry:
+        parser.print_help()
+        return
+
     # Start application
     kwargs = vars(args)
     callback = _registry[args._command]
