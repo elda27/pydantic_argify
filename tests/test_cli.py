@@ -7,7 +7,16 @@ from pydantic import BaseModel
 from pydantic_argparse_builder import command, entrypoint, main, sub_command
 
 
-def test_cli_command():
+@pytest.fixture
+def registry():
+    from pydantic_argparse_builder.cli import _registry
+
+    _registry.clear()
+    yield
+    _registry.clear()
+
+
+def test_cli_command(registry):
     class Config(BaseModel):
         name: str
         age: int
@@ -30,7 +39,7 @@ def test_cli_command():
             print(config)
 
 
-def test_cli_sub_command():
+def test_cli_sub_command(registry):
     class Config1(BaseModel):
         name: str
         age: int
@@ -64,7 +73,7 @@ def test_cli_sub_command():
             print(config)
 
 
-def test_entrypoint():
+def test_entrypoint(registry):
     class Config(BaseModel):
         name: str = None
         age: int = None
