@@ -1,17 +1,8 @@
 from argparse import Action, ArgumentParser
+from copy import deepcopy
 from enum import Enum
 from functools import wraps
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Any, Callable, Dict, List, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel
 from pydantic.fields import (
@@ -103,6 +94,7 @@ def build_parser(
     excludes: List[str] = [],
     auto_abbrev: bool = True,
     groupby_inherit: bool = True,
+    exclude_abbrev_args: List[str] = ["-h"],
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
 
@@ -126,7 +118,7 @@ def build_parser(
     """
     groups = get_groupby_field_names(model) if groupby_inherit else {}
     cache_parsers = {}
-    exist_args = []
+    exist_abbrev_args = deepcopy(exclude_abbrev_args)
     for name, field in get_model_field(model).items():
         if name in excludes:
             continue
@@ -170,9 +162,9 @@ def build_parser(
             # Set abbreviated parameter
             if auto_abbrev:
                 abbrev_arg = f"-{name[0]}"
-                if abbrev_arg not in exist_args:
+                if abbrev_arg not in exist_abbrev_args:
                     args.append(abbrev_arg)
-                    exist_args.append(abbrev_arg)
+                    exist_abbrev_args.append(abbrev_arg)
 
             _parser.add_argument(
                 *args,
