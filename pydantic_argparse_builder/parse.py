@@ -92,9 +92,9 @@ def build_parser(
     parser: ArgumentParser,
     model: Type[BaseModel],
     excludes: List[str] = [],
-    auto_abbrev: bool = True,
+    auto_truncate: bool = True,
     groupby_inherit: bool = True,
-    exclude_abbrev_args: List[str] = ["-h"],
+    exclude_truncate_args: List[str] = ["-h"],
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
 
@@ -106,8 +106,8 @@ def build_parser(
         BaseModel class
     excludes : List[str], optional
         Exclude field, by default []
-    auto_abbrev : bool, optional
-        Enable abbreviated parameter such as `-h`, by default True
+    auto_truncate : bool, optional
+        Enable truncated parameter such as `-h`, by default True
     groupby_inherit: bool, optional
         If True, inherited basemodels are grouped by class name, by default True
 
@@ -118,7 +118,7 @@ def build_parser(
     """
     groups = get_groupby_field_names(model) if groupby_inherit else {}
     cache_parsers = {}
-    exist_abbrev_args = deepcopy(exclude_abbrev_args)
+    exist_truncate_args = deepcopy(exclude_truncate_args)
     for name, field in get_model_field(model).items():
         if name in excludes:
             continue
@@ -159,12 +159,12 @@ def build_parser(
         else:
             # default case for other types
             args = [f"--{name.replace('_', '-')}"]
-            # Set abbreviated parameter
-            if auto_abbrev:
-                abbrev_arg = f"-{name[0]}"
-                if abbrev_arg not in exist_abbrev_args:
-                    args.append(abbrev_arg)
-                    exist_abbrev_args.append(abbrev_arg)
+            # Set truncateiated parameter
+            if auto_truncate:
+                truncate_arg = f"-{name[0]}"
+                if truncate_arg not in exist_truncate_args:
+                    args.append(truncate_arg)
+                    exist_truncate_args.append(truncate_arg)
 
             _parser.add_argument(
                 *args,
