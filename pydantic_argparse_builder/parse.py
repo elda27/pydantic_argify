@@ -94,7 +94,7 @@ def build_parser(
     excludes: List[str] = [],
     auto_truncate: bool = True,
     groupby_inherit: bool = True,
-    exclude_truncate_args: List[str] = ["-h"],
+    exclude_truncated_args: List[str] = ["-h"],
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
 
@@ -110,6 +110,8 @@ def build_parser(
         Enable truncated parameter such as `-h`, by default True
     groupby_inherit: bool, optional
         If True, inherited basemodels are grouped by class name, by default True
+    exclude_truncated_args: List[str], optional
+        Exclude truncated arguments, by default ["-h"]
 
     Returns
     -------
@@ -118,7 +120,7 @@ def build_parser(
     """
     groups = get_groupby_field_names(model) if groupby_inherit else {}
     cache_parsers = {}
-    exist_truncate_args = deepcopy(exclude_truncate_args)
+    exist_truncate_args = deepcopy(exclude_truncated_args)
     for name, field in get_model_field(model).items():
         if name in excludes:
             continue
