@@ -1,4 +1,5 @@
 from argparse import Action, ArgumentParser
+from copy import deepcopy
 from enum import Enum
 from functools import wraps
 from typing import Any, Callable, Dict, List, Type, Union, get_args, get_origin
@@ -9,7 +10,6 @@ from pydantic.fields import (
     SHAPE_LIST,
     SHAPE_MAPPING,
     SHAPE_SET,
-    SHAPE_SINGLETON,
     SHAPE_TUPLE,
     ModelField,
     Undefined,
@@ -37,17 +37,17 @@ def wrap_parser_default(func: Callable[[BaseModel], None], model_type: Type[Base
 
 
 def get_groupby_field_names(model: Type[BaseModel]) -> Dict[str, str]:
-    """_summary_
+    """Get field names for groups
 
     Parameters
     ----------
     model : Type[BaseModel]
-        _description_
+        model class
 
     Returns
     -------
     Dict[str, str]
-        _description_
+        pair of field name and group name
     """
     models = []
     for model_type in model.__mro__:
@@ -92,8 +92,9 @@ def build_parser(
     parser: ArgumentParser,
     model: Type[BaseModel],
     excludes: List[str] = [],
-    auto_abbrev: bool = True,
-    groupby: bool = True,
+    auto_truncate: bool = True,
+    groupby_inherit: bool = True,
+    exclude_truncated_args: List[str] = ["-h"],
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
 
@@ -105,17 +106,21 @@ def build_parser(
         BaseModel class
     excludes : List[str], optional
         Exclude field, by default []
-    auto_abbrev : bool, optional
-        Enable abbreviated parameter such as `-h`, by default True
+    auto_truncate : bool, optional
+        Enable truncated parameter such as `-h`, by default True
+    groupby_inherit: bool, optional
+        If True, inherited basemodels are grouped by class name, by default True
+    exclude_truncated_args: List[str], optional
+        Exclude truncated arguments, by default ["-h"]
 
     Returns
     -------
     ArgumentParser
         Argument parser object
     """
-    groupby = get_groupby_field_names(model) if groupby else {}
+    groups = get_groupby_field_names(model) if groupby_inherit else {}
     cache_parsers = {}
-    exist_args = []
+    exist_truncate_args = deepcopy(exclude_truncated_args)
     for name, field in get_model_field(model).items():
         if name in excludes:
             continue
@@ -123,38 +128,15 @@ def build_parser(
         kwargs = {}
 
         # Set option of multiple arguments
-        kwargs["type"] = field.type_
-        if field.shape in (SHAPE_LIST, SHAPE_SET):
-            if field.required:
-                kwargs["nargs"] = "+"
-            else:
-                kwargs["nargs"] = "*"
-        elif field.shape in (SHAPE_DICT, SHAPE_MAPPING):
-            kwargs["action"] = StoreKeywordParam
-            kwargs["type"] = str
-            if field.required:
-                kwargs["nargs"] = "+"
-            else:
-                kwargs["nargs"] = "*"
-        elif field.shape == SHAPE_TUPLE:
-            args = get_args(field.type_)
-            kwargs["type"] = args[0]
-            kwargs["nargs"] = len(args)
-        elif field.type_ is type and issubclass(field.type_, Enum):
-            kwargs["choices"] = list(field.type_)
-        elif is_literal_type(field.type_):
-            del kwargs["type"]
-            kwargs["choices"] = get_args(field.type_)
-        elif is_union(get_origin(field.type_)):
-            kwargs["type"] = str  # TODO: Support union type
+        kwargs.update(**_parse_shape_args(name, field))
 
         # Set default value
         if field.field_info.default is not Undefined:
-            kwargs["default"] = field.field_info.default
+            kwargs["default"] = field.get_default()
 
         # If groupby is enabled, create a new parser for each group
-        if name in groupby:
-            group_name = groupby[name]
+        if name in groups:
+            group_name = groups[name]
             if group_name not in cache_parsers:
                 _parser = parser.add_argument_group(group_name)
                 cache_parsers[group_name] = _parser
@@ -163,6 +145,7 @@ def build_parser(
         else:
             _parser = parser
 
+        kwargs["help"] = field.field_info.description
         # Set option args
         if field.type_ is bool:
             # Special case for boolean
@@ -171,48 +154,118 @@ def build_parser(
 
             if field.required:
                 # Create both enable and disable option
-                mutual = _parser.add_mutually_exclusive_group(required=True)
-                args = [f"--enable-{name.replace('_', '-')}"]
-                kwargs["action"] = "store_true"
-                mutual.add_argument(
-                    *args,
-                    help=field.field_info.description,
-                    **kwargs,
-                )
-                args = [f"--disable-{name.replace('_', '-')}"]
-                kwargs["action"] = "store_false"
-                mutual.add_argument(
-                    *args,
-                    help=field.field_info.description,
-                    **kwargs,
-                )
+                _add_both_options(_parser, name, field, kwargs)
             else:
                 # Create either one option.
-                if field.get_default():
-                    args = [f"--disable-{name.replace('_', '-')}"]
-                    kwargs["action"] = "store_false"
-                else:
-                    args = [f"--enable-{name.replace('_', '-')}"]
-                    kwargs["action"] = "store_true"
-                _parser.add_argument(
-                    *args,
-                    help=field.field_info.description,
-                    **kwargs,
-                )
+                _add_either_option(_parser, name, field, kwargs)
         else:
             # default case for other types
             args = [f"--{name.replace('_', '-')}"]
-            # Set abbreviated parameter
-            if auto_abbrev:
-                abbrev_arg = f"-{name[0]}"
-                if abbrev_arg not in exist_args:
-                    args.append(abbrev_arg)
-                    exist_args.append(abbrev_arg)
+            # Set truncateiated parameter
+            if auto_truncate:
+                truncate_arg = f"-{name[0]}"
+                if truncate_arg not in exist_truncate_args:
+                    args.append(truncate_arg)
+                    exist_truncate_args.append(truncate_arg)
 
             _parser.add_argument(
                 *args,
                 required=field.required,
-                help=field.field_info.description,
                 **kwargs,
             )
+
     return parser
+
+
+def get_cli_names(name: str, field: ModelField, prefix: str = "") -> List[str]:
+    """Create cli string from field name.
+
+    Parameters
+    ----------
+    name : str
+        field name
+    field : ModelField
+        field object
+    prefix : str, optional
+        prefix of the default arguments, by default ""
+
+    Returns
+    -------
+    List[str]
+        list of cli arguments
+    """
+    names = field.field_info.extra.get("cli", None)
+    if names is None:
+        names = [prefix + name.replace("_", "-")]
+        if field.has_alias:
+            names.append(prefix + field.alias.replace("_", "-"))
+    return names
+
+
+def _parse_shape_args(name: str, field: ModelField) -> dict:
+    kwargs = {}
+    kwargs["type"] = field.type_
+    if field.shape in (SHAPE_LIST, SHAPE_SET):
+        if field.required:
+            kwargs["nargs"] = "+"
+        else:
+            kwargs["nargs"] = "*"
+    elif field.shape in (SHAPE_DICT, SHAPE_MAPPING):
+        kwargs["action"] = StoreKeywordParam
+        kwargs["type"] = str
+        if field.required:
+            kwargs["nargs"] = "+"
+        else:
+            kwargs["nargs"] = "*"
+    elif field.shape == SHAPE_TUPLE:
+        args = get_args(field.type_)
+        kwargs["type"] = args[0]
+        kwargs["nargs"] = len(args)
+    elif field.type_ is type and issubclass(field.type_, Enum):
+        kwargs["choices"] = list(field.type_)
+    elif is_literal_type(field.type_):
+        del kwargs["type"]
+        kwargs["choices"] = get_args(field.type_)
+    elif is_union(get_origin(field.type_)):
+        kwargs["type"] = str  # TODO: Support union type
+    return kwargs
+
+
+def _add_both_options(
+    parser: ArgumentParser,
+    name: str,
+    field: ModelField,
+    kwargs: Dict[str, Any],
+):
+    mutual = parser.add_mutually_exclusive_group(required=True)
+
+    args = get_cli_names(name, field, "--enable-")
+    kwargs["action"] = "store_true"
+    mutual.add_argument(
+        *args,
+        **kwargs,
+    )
+    args = get_cli_names(name, field, "--disable-")
+    kwargs["action"] = "store_false"
+    mutual.add_argument(
+        *args,
+        **kwargs,
+    )
+
+
+def _add_either_option(
+    parser: ArgumentParser,
+    name: str,
+    field: ModelField,
+    kwargs: Dict[str, Any],
+):
+    if kwargs["default"]:
+        args = get_cli_names(name, field, prefix="--disable-")
+        kwargs["action"] = "store_false"
+    else:
+        args = get_cli_names(name, field, prefix="--enable-")
+        kwargs["action"] = "store_true"
+    parser.add_argument(
+        *args,
+        **kwargs,
+    )
