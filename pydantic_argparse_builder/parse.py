@@ -22,20 +22,6 @@ def get_model_field(model: Type[BaseModel]) -> Dict[str, ModelField]:
     return {field.name: field for field in model.__fields__.values()}
 
 
-def wrap_parser_default(func: Callable[[BaseModel], None], model_type: Type[BaseModel]):
-    """Wrap parser default."""
-
-    @wraps(func)
-    def wrapper(args: Any):
-        """Wrapper."""
-        kwargs = vars(args)
-        del kwargs["_command"]
-        del kwargs["_func"]
-        func(model_type.parse_obj(kwargs))
-
-    return wrapper
-
-
 def get_groupby_field_names(model: Type[BaseModel]) -> Dict[str, str]:
     """Get field names for groups
 
