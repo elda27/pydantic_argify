@@ -1,0 +1,36 @@
+site_name: pydantic-argparse-builder docs
+site_author: elda27
+repo_url: https://github.com/elda27/pydantic_argparse_builder
+theme:
+  name: material
+  locale: en
+  include_sidebar: false
+  features:
+    - navigation.tracking
+    - navigation.sections
+    - content.code.copy
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+nav:
+  - Home: "index.md"
+  - Introduction: "introduction.md"
+  - Basic usage: "basic_usage.md"
+  - Library reference: "library_reference.md"
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [../]
+          options:
+            show_root_heading: true
+            show_root_toc_entry: true
+            docstring_style: numpy
+  - autorefs
