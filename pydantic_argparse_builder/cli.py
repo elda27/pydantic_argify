@@ -33,7 +33,7 @@ def main():
     """Start application"""
     # Build parser
     parser = ArgumentParser()
-    if len(_registry) == 1:
+    if len(_registry) == 1 and None in _registry:
         build_parser(parser, get_command_model(_registry[None]))
         parser.set_defaults(_command=None)
     else:
@@ -64,15 +64,15 @@ def entrypoint(func: Any) -> ContextManager[None]:
 
     Example
     -------
-    >>> @entrypoint
-    >>> def main():
-    >>>     print("Before building argument parsers!")
-    >>>     try:
-    >>>         yield
-    >>>     except Exception as e:
-    >>>         print("Error hamdling!", e)
-    >>>     finally:
-    >>>         print("End!")
+        @entrypoint
+        def main():
+            print("Before building argument parsers!")
+            try:
+                yield
+            except Exception as e:
+                print("Error hamdling!", e)
+            finally:
+                print("End!")
 
     """
     _func = contextmanager(func)
@@ -86,7 +86,27 @@ def entrypoint(func: Any) -> ContextManager[None]:
 
 
 def command(func: Any):
-    """Command decorator"""
+    """Command decorator for application
+    You can create an application similar to `click`.
+
+    Note: This decorator can be used only once.
+
+    Example
+    -------
+    example.py
+
+        from pydantic_argparse_builder import command, main
+        class Config(BaseModel):
+            string: str = Field(description="string parameter")
+            integer: int = Field(description="integer parameter")
+        @command
+        def command(config: Config):
+            print(config)
+        main()
+
+        $> python example.py --string "Hello" --integer 1
+        string='Hello', integer=1
+    """
     if len(_registry) > 0:
         raise ValueError("Only one command is allowed.")
     _registry[None] = func

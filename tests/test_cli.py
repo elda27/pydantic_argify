@@ -52,7 +52,7 @@ def test_cli_command(registry):
             print(config)
 
 
-def test_cli_sub_command(registry):
+def test_cli_sub_command_at_single_command(registry):
     class Config1(BaseModel):
         name: str
         age: int
@@ -62,6 +62,33 @@ def test_cli_sub_command(registry):
     def launch1(config: Config1):
         print(config)
 
+    from pydantic_argparse_builder.cli import _registry
+
+    assert len(_registry) == 1
+    assert "launch1" in _registry
+    assert _registry["launch1"] is launch1
+
+    with pytest.raises(ValueError):
+
+        @sub_command("launch1")
+        def launch3(config: Config1):
+            print(config)
+
+
+def test_cli_sub_command(registry):
+    class Config1(BaseModel):
+        name: str
+        age: int
+        is_active: bool
+
+    count = 0
+
+    @sub_command("launch1")
+    def launch1(config: Config1):
+        nonlocal count
+        count += 1
+        print(config)
+
     class Config2(BaseModel):
         name: str
         age: int
@@ -69,6 +96,8 @@ def test_cli_sub_command(registry):
 
     @sub_command("launch2")
     def launch2(config: Config2):
+        nonlocal count
+        count += 2
         print(config)
 
     from pydantic_argparse_builder.cli import _registry
@@ -84,6 +113,27 @@ def test_cli_sub_command(registry):
         @sub_command("launch1")
         def launch3(config: Config1):
             print(config)
+
+    assert count == 0
+    with context_args(
+        ["launch1", "--name", "test", "--age", "10", "--enable-is-active"]
+    ):
+        try:
+            main()
+        except SystemExit:
+            pass
+    assert count == 1
+    with context_args(
+        ["launch2", "--name", "test", "--age", "10", "--enable-is-active"]
+    ):
+        try:
+            main()
+        except SystemExit:
+            pass
+    assert count == 3
+
+
+from tests.context import context_args
 
 
 def test_entrypoint(registry):
