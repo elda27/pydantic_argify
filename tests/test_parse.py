@@ -539,3 +539,26 @@ def test_argparse_with_group():
             "param_5": ["value", "value"],
         }
     ) == Config.parse_obj(vars(args))
+
+
+def test_alias():
+    class Config(BaseModel):
+        param: str = Field(alias="param_alias")
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+    a = parser._actions
+
+    # param
+    assert "--param" in a[1].option_strings
+    assert "--param-alias" in a[1].option_strings
+    assert "param_alias" == a[1].dest
+    assert a[1].type is str
+    assert a[1].default is None
+    assert a[1].required
+    assert a[1].nargs is None
+    assert a[1].help is None
+
+    # Test parse
+    args = parser.parse_args(["--param-alias", "value"])
+    assert Config(**{"param_alias": "value"}) == Config.parse_obj(vars(args))

@@ -147,10 +147,10 @@ def build_parser(
                 _add_either_option(_parser, name, field, kwargs, config=model.Config)
         else:
             # default case for other types
-            args = [f"--{name.replace('_', '-')}"]
+            args = get_cli_names(name, field, prefix="--")
             # Set truncateiated parameter
             if auto_truncate:
-                truncate_arg = f"-{name[0]}"
+                truncate_arg = f"-{args[0].strip('-')[0]}"
                 if truncate_arg not in exist_truncate_args:
                     args.append(truncate_arg)
                     exist_truncate_args.append(truncate_arg)
@@ -183,9 +183,10 @@ def get_cli_names(name: str, field: ModelField, prefix: str = "") -> List[str]:
     """
     names = field.field_info.extra.get("cli", None)
     if names is None:
-        names = [prefix + name.replace("_", "-")]
+        names = []
         if field.has_alias:
             names.append(prefix + field.alias.replace("_", "-"))
+        names.append(prefix + name.replace("_", "-"))
     return names
 
 
