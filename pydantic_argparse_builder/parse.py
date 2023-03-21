@@ -15,6 +15,8 @@ from pydantic.fields import (
 )
 from pydantic.typing import is_literal_type, is_union
 
+from pydantic_argparse_builder.config import _CliConfig
+
 
 def get_model_field(model: Type[BaseModel]) -> Dict[str, ModelField]:
     """Get field info."""
@@ -139,10 +141,10 @@ def build_parser(
 
             if field.required:
                 # Create both enable and disable option
-                _add_both_options(_parser, name, field, kwargs)
+                _add_both_options(_parser, name, field, kwargs, config=model.Config)
             else:
                 # Create either one option.
-                _add_either_option(_parser, name, field, kwargs)
+                _add_either_option(_parser, name, field, kwargs, config=model.Config)
         else:
             # default case for other types
             args = [f"--{name.replace('_', '-')}"]
@@ -221,16 +223,29 @@ def _add_both_options(
     name: str,
     field: ModelField,
     kwargs: Dict[str, Any],
+    config: _CliConfig,
 ):
     mutual = parser.add_mutually_exclusive_group(required=True)
 
-    args = get_cli_names(name, field, "--enable-")
+    args = get_cli_names(
+        name,
+        field,
+        prefix=field.field_info.extra.get(
+            "cli_enable_prefix", getattr(config, "cli_enable_prefix", "--enable-")
+        ),
+    )
     kwargs["action"] = "store_true"
     mutual.add_argument(
         *args,
         **kwargs,
     )
-    args = get_cli_names(name, field, "--disable-")
+    args = get_cli_names(
+        name,
+        field,
+        prefix=field.field_info.extra.get(
+            "cli_disable_prefix", getattr(config, "cli_disable_prefix", "--disable-")
+        ),
+    )
     kwargs["action"] = "store_false"
     mutual.add_argument(
         *args,
@@ -243,12 +258,26 @@ def _add_either_option(
     name: str,
     field: ModelField,
     kwargs: Dict[str, Any],
+    config: _CliConfig,
 ):
     if kwargs["default"]:
-        args = get_cli_names(name, field, prefix="--disable-")
+        args = get_cli_names(
+            name,
+            field,
+            prefix=field.field_info.extra.get(
+                "cli_disable_prefix",
+                getattr(config, "cli_disable_prefix", "--disable-"),
+            ),
+        )
         kwargs["action"] = "store_false"
     else:
-        args = get_cli_names(name, field, prefix="--enable-")
+        args = get_cli_names(
+            name,
+            field,
+            prefix=field.field_info.extra.get(
+                "cli_enable_prefix", getattr(config, "cli_enable_prefix", "--enable-")
+            ),
+        )
         kwargs["action"] = "store_true"
     parser.add_argument(
         *args,

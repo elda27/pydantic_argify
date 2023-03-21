@@ -237,6 +237,66 @@ def test_boolean_mutual():
     ) == Config.parse_obj(vars(args))
 
 
+from pydantic_argparse_builder import CliConfig
+
+
+def test_boolean_mutual_with_modified_prefix():
+    class Config(BaseModel):
+        param: bool
+        switch: bool = Field(
+            ..., cli_enable_prefix="--true-", cli_disable_prefix="--false-"
+        )
+
+        class Config(CliConfig):
+            cli_enable_prefix = "--on-"
+            cli_disable_prefix = "--off-"
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    # param
+    a = parser._actions
+    assert "--on-param" in a[1].option_strings
+    assert "param" == a[1].dest
+    assert not a[1].required
+    assert a[1].nargs == 0
+    assert a[1].help is None
+
+    assert "--off-param" in a[2].option_strings
+    assert "param" == a[2].dest
+    assert not a[2].required
+    assert a[2].nargs == 0
+    assert a[2].help is None
+
+    assert "--true-switch" in a[3].option_strings
+    assert "switch" == a[3].dest
+    assert not a[3].required
+    assert a[3].nargs == 0
+    assert a[3].help is None
+
+    assert "--false-switch" in a[4].option_strings
+    assert "switch" == a[4].dest
+    assert not a[4].required
+    assert a[4].nargs == 0
+    assert a[4].help is None
+
+    args = parser.parse_args(["--on-param", "--true-switch"])
+    assert Config(
+        **{
+            "param": True,
+            "switch": True,
+        }
+    ) == Config.parse_obj(vars(args))
+
+    args = parser.parse_args(["--off-param", "--false-switch"])
+    assert Config(
+        **{
+            "param": False,
+            "switch": False,
+        }
+    ) == Config.parse_obj(vars(args))
+
+
 def test_boolean_enable():
     class Config(BaseModel):
         param: bool = False
