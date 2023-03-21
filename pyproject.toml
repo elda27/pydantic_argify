@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pydantic-argparse-builder"
-version = "0.2.0"
+version = "0.2.1"
 description = "Build ArgumentParser from pydantic model."
 authors = ["elda27 <kaz.birdstick@gmail.com>"]
 license = "Apache-2.0"
