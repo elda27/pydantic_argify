@@ -1,11 +1,14 @@
 import sys
 from copy import deepcopy
+from typing import Union
 
 import pytest
 from pydantic import BaseModel
 
 from pydantic_argparse_builder import command, entrypoint, main, sub_command
 from pydantic_argparse_builder.cli import get_command_model
+
+from tests.context import context_args
 
 
 @pytest.fixture
@@ -133,14 +136,11 @@ def test_cli_sub_command(registry):
     assert count == 3
 
 
-from tests.context import context_args
-
-
 def test_entrypoint(registry):
     class Config(BaseModel):
-        name: str = None
-        age: int = None
-        is_active: bool = None
+        name: Union[str, None] = None
+        age: Union[int, None] = None
+        is_active: Union[bool, None] = None
 
     count = 0
 
@@ -166,9 +166,9 @@ def test_entrypoint(registry):
 
 def test_main_with_command(registry):
     class Config(BaseModel):
-        name: str = None
-        age: int = None
-        is_active: bool = None
+        name: Union[str, None] = None
+        age: Union[int, None] = None
+        is_active: Union[bool, None] = None
 
     count = 0
 
@@ -191,9 +191,9 @@ def test_main_with_sub_command(registry):
     count = 0
 
     class Config1(BaseModel):
-        name: str = None
-        age: int = None
-        is_active: bool = None
+        name: Union[str, None] = None
+        age: Union[int, None] = None
+        is_active: Union[bool, None] = None
 
     @sub_command("launch1")
     def launch1(config: Config1):
@@ -201,9 +201,9 @@ def test_main_with_sub_command(registry):
         count += 1
 
     class Config2(BaseModel):
-        name: str = None
-        age: int = None
-        is_active: bool = None
+        name: Union[str, None] = None
+        age: Union[int, None] = None
+        is_active: Union[bool, None] = None
 
     @sub_command("launch2")
     def launch2(config: Config2):

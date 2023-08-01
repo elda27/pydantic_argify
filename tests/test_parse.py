@@ -157,7 +157,7 @@ def test_union():
     )
     assert Config(
         **{
-            "param": 10,
+            "param": "10",
         }
     ) == Config.parse_obj(vars(args))
 
@@ -354,7 +354,7 @@ def test_boolean_disable():
 def test_argparse():
     class Config(BaseModel):
         param: str
-        param_2: Optional[str]
+        param_2: Optional[str] = None
         param_3: Optional[str] = None
         param_4: List[str] = Field(["value"], description="description of the param_4")
         param_5: List[str] = Field(description="description of the param_4")
@@ -457,7 +457,7 @@ def test_get_groupby_field_names():
 def test_argparse_with_group():
     class Config(BaseModel):
         param: str
-        param_2: Optional[str]
+        param_2: Optional[str] = None
         param_3: Optional[str] = None
 
     class Config2(Config):

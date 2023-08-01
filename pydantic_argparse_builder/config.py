@@ -1,16 +1,14 @@
 from typing import Dict, Union
 
-from pydantic import BaseConfig, BaseSettings
+from pydantic import ConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class _CliConfig:
-    cli_enable_prefix: Union[str, Dict[str, str]] = "--enable-"
-    cli_disable_prefix: Union[str, Dict[str, str]] = "--disable-"
+class CliConfig(ConfigDict):
+    cli_enable_prefix: Union[str, Dict[str, str]]
+    cli_disable_prefix: Union[str, Dict[str, str]]
 
 
-class CliConfig(BaseConfig, _CliConfig):
-    pass
-
-
-class EnvCliConfig(BaseSettings.Config, _CliConfig):
-    pass
+class EnvCliConfig(SettingsConfigDict):
+    cli_enable_prefix: Union[str, Dict[str, str]]
+    cli_disable_prefix: Union[str, Dict[str, str]]
