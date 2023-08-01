@@ -2,14 +2,14 @@ import inspect
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Callable, Dict, Tuple, Type
+from typing import Any, Callable, Dict, Tuple, Type, Union
 
 from pydantic import BaseModel
 from typing_extensions import ContextManager
 
 from pydantic_argparse_builder.parse import build_parser
 
-_registry: Dict[str, Tuple[Callable[[BaseModel], None]]] = {}
+_registry: Dict[Union[str, None], Tuple[Callable[[BaseModel], None]]] = {}
 
 
 def get_command_model(func: Callable[[BaseModel], None]) -> Type[BaseModel]:

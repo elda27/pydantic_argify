@@ -77,7 +77,22 @@ optional arguments:
   -h, --help    show this help message and exit
 ```
 
+## Additional config
+Behaviour of pydantic can be controlled via the `Config` class or extra arguments of `Field`.
+`Config` is affected all fields.
+Extra arguments of `Field` is affected specific field. 
+
+
+<dl>
+  <dt><code>cli_disable_prefix</code></dt>
+  <dd>Prefix of argument of boolean type for `store_false`. Default to <code>--disable-</code></dd>
+
+  <dt><code>cli_enable_prefix</code></dt>
+  <dd>Prefix of argument of boolean type for `store_true`. Default to <code>--enable-</code></dd>
+
+</dl>
+
+
 ## Future works
 
-- [ ]: High level api such as click
 - [ ]: Options completion for bash

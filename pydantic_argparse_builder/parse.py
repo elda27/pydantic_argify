@@ -1,7 +1,7 @@
 from argparse import Action, ArgumentParser
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Dict, List, Type, Union, get_args, get_origin
+from typing import Any, Dict, List, Type, Union, get_args, get_origin, Literal
 
 from pydantic import BaseModel
 from pydantic.fields import (
@@ -59,7 +59,7 @@ class StoreKeywordParam(Action):
         values: Union[str, List[str]],
         option_strings=None,
     ):
-        param_dict = getattr(namespace, self.dest, [])
+        param_dict = getattr(namespace, self.dest)
         if param_dict is None:
             param_dict = {}
         if not isinstance(values, list):
@@ -82,6 +82,7 @@ def build_parser(
     auto_truncate: bool = True,
     groupby_inherit: bool = True,
     exclude_truncated_args: List[str] = ["-h"],
+    parse_nested_model: bool = True,
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
 
@@ -99,7 +100,8 @@ def build_parser(
         If True, inherited basemodels are grouped by class name, by default True
     exclude_truncated_args: List[str], optional
         Exclude truncated arguments, by default ["-h"]
-
+    parse_nested_model: bool
+        If True, nested model is also parsed, by default True
     Returns
     -------
     ArgumentParser
@@ -110,6 +112,21 @@ def build_parser(
     exist_truncate_args = deepcopy(exclude_truncated_args)
     for name, field in get_model_field(model).items():
         if name in excludes:
+            continue
+
+        if (
+            parse_nested_model
+            and isinstance(field.type_, type)
+            and issubclass(field.type_, BaseModel)
+        ):
+            build_parser(
+                parser,
+                field.type_,
+                excludes=excludes,
+                groupby_inherit=True,
+                exclude_truncated_args=exclude_truncated_args,
+                parse_nested_model=parse_nested_model,
+            )
             continue
 
         kwargs = {}
