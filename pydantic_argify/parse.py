@@ -297,7 +297,20 @@ def _add_either_option(
     )
 
 
-def _get_extra(field: FieldInfo, config: ConfigDict, key: str, default: Any = None):
+def _get_extra(
+    field: FieldInfo, config: ConfigDict, key: str, default: Any = None
+) -> Any:
+    """Get extra field from config.
+
+    Args:
+        field (FieldInfo): Field object
+        config (ConfigDict): Config object
+        key (str): key name
+        default (Any, optional): default value if not exists. Defaults to None.
+
+    Returns:
+        Any: value of the key
+    """
     if field.json_schema_extra is None:
         return config.get(key, default)
     else:

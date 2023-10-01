@@ -38,7 +38,7 @@ def test_tuple():
         **{
             "param": ("value1", "value2", "value3"),
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 def test_literal():
@@ -67,7 +67,7 @@ def test_literal():
         **{
             "param": "value1",
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
     with pytest.raises((ArgumentError, SystemExit)):
         parser.parse_args(
@@ -109,7 +109,7 @@ def test_enum():
         **{
             "param": TestEnum.One,
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
     with pytest.raises((ArgumentError, SystemExit)):
         parser.parse_args(
@@ -147,7 +147,7 @@ def test_union():
         **{
             "param": "value",
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
     args = parser.parse_args(
         [
@@ -159,7 +159,7 @@ def test_union():
         **{
             "param": "10",
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 def test_dict():
@@ -190,7 +190,7 @@ def test_dict():
         **{
             "param": {"key1": 10, "key2": 20},
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 def test_boolean_mutual():
@@ -223,7 +223,7 @@ def test_boolean_mutual():
         **{
             "param": True,
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
     args = parser.parse_args(
         [
@@ -234,7 +234,7 @@ def test_boolean_mutual():
         **{
             "param": False,
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 from pydantic_argify import CliConfig
@@ -286,7 +286,7 @@ def test_boolean_mutual_with_modified_prefix():
             "param": True,
             "switch": True,
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
     args = parser.parse_args(["--off-param", "--false-switch"])
     assert Config(
@@ -294,7 +294,7 @@ def test_boolean_mutual_with_modified_prefix():
             "param": False,
             "switch": False,
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 def test_boolean_enable():
@@ -321,7 +321,7 @@ def test_boolean_enable():
         **{
             "param": True,
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 def test_boolean_disable():
@@ -348,7 +348,7 @@ def test_boolean_disable():
         **{
             "param": False,
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 def test_argparse():
@@ -431,7 +431,7 @@ def test_argparse():
             "param_4": ["value", "value"],
             "param_5": ["value", "value"],
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 def test_get_groupby_field_names():
@@ -538,7 +538,7 @@ def test_argparse_with_group():
             "param_4": ["value", "value"],
             "param_5": ["value", "value"],
         }
-    ) == Config.parse_obj(vars(args))
+    ) == Config.model_validate(vars(args))
 
 
 def test_alias():
@@ -561,4 +561,4 @@ def test_alias():
 
     # Test parse
     args = parser.parse_args(["--param-alias", "value"])
-    assert Config(**{"param_alias": "value"}) == Config.parse_obj(vars(args))
+    assert Config(**{"param_alias": "value"}) == Config.model_validate(vars(args))
