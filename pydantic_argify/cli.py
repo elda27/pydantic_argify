@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Tuple, Type, Union
 from pydantic import BaseModel
 from typing_extensions import ContextManager
 
-from pydantic_argparse_builder.parse import build_parser
+from pydantic_argify.parse import build_parser
 
 _registry: Dict[Union[str, None], Tuple[Callable[[BaseModel], None]]] = {}
 
@@ -95,7 +95,7 @@ def command(func: Any):
     -------
     example.py
 
-        from pydantic_argparse_builder import command, main
+        from pydantic_argify import command, main
         class Config(BaseModel):
             string: str = Field(description="string parameter")
             integer: int = Field(description="integer parameter")

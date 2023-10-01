@@ -5,15 +5,15 @@ from typing import Union
 import pytest
 from pydantic import BaseModel
 
-from pydantic_argparse_builder import command, entrypoint, main, sub_command
-from pydantic_argparse_builder.cli import get_command_model
+from pydantic_argify import command, entrypoint, main, sub_command
+from pydantic_argify.cli import get_command_model
 
 from tests.context import context_args
 
 
 @pytest.fixture
 def registry():
-    from pydantic_argparse_builder.cli import _registry
+    from pydantic_argify.cli import _registry
 
     _registry.clear()
     yield
@@ -42,7 +42,7 @@ def test_cli_command(registry):
     def launch(config: Config):
         print(config)
 
-    from pydantic_argparse_builder.cli import _registry
+    from pydantic_argify.cli import _registry
 
     assert len(_registry) == 1
     assert None in _registry
@@ -65,7 +65,7 @@ def test_cli_sub_command_at_single_command(registry):
     def launch1(config: Config1):
         print(config)
 
-    from pydantic_argparse_builder.cli import _registry
+    from pydantic_argify.cli import _registry
 
     assert len(_registry) == 1
     assert "launch1" in _registry
@@ -103,7 +103,7 @@ def test_cli_sub_command(registry):
         count += 2
         print(config)
 
-    from pydantic_argparse_builder.cli import _registry
+    from pydantic_argify.cli import _registry
 
     assert len(_registry) == 2
     assert "launch1" in _registry

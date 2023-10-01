@@ -5,8 +5,8 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 import pytest
 from pydantic import BaseModel, Field
 
-from pydantic_argparse_builder import build_parser
-from pydantic_argparse_builder.parse import get_groupby_field_names
+from pydantic_argify import build_parser
+from pydantic_argify.parse import get_groupby_field_names
 
 
 def test_tuple():
@@ -237,7 +237,7 @@ def test_boolean_mutual():
     ) == Config.parse_obj(vars(args))
 
 
-from pydantic_argparse_builder import CliConfig
+from pydantic_argify import CliConfig
 
 
 def test_boolean_mutual_with_modified_prefix():

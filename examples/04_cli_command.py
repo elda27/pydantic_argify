@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from pydantic_argparse_builder import command, main
+from pydantic_argify import command, main
 
 
 class Config(BaseModel):

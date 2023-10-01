@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 from pydantic import BaseModel, Field
 
-from pydantic_argparse_builder import CliConfig, build_parser
+from pydantic_argify import CliConfig, build_parser
 
 
 class Config(BaseModel):
