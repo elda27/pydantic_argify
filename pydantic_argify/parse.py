@@ -100,6 +100,7 @@ def build_parser(
     groups = get_groupby_field_names(model) if groupby_inherit else {}
     cache_parsers = {}
     exist_truncate_args = deepcopy(exclude_truncated_args)
+    _parser: Any
     for name, field in get_model_field(model).items():
         if name in excludes:
             continue
@@ -119,7 +120,7 @@ def build_parser(
             )
             continue
 
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
 
         # Set option of multiple arguments
         kwargs.update(**_parse_shape_args(name, field))
@@ -204,11 +205,14 @@ def get_cli_names(
 
 
 def _parse_shape_args(name: str, field: FieldInfo) -> dict:
-    kwargs = {}
+    kwargs: dict[str, Any] = {}
     kwargs["type"] = field.annotation
     origin = get_origin(field.annotation)
-    field.discriminator
-    if origin is list or origin is set:
+    # field.discriminator
+    if field.annotation is None or origin is None:
+        # No annotation provieded but this case is not expected.
+        kwargs["type"] = str
+    elif origin is list or origin is set:
         kwargs["type"] = get_args(field.annotation)[0]
         if field.is_required():
             kwargs["nargs"] = "+"
