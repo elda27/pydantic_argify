@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Type, Union, get_args, get_origin, Literal, 
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo, PydanticUndefined
-
+import types
 
 def get_model_field(model: Type[BaseModel]) -> Dict[str, FieldInfo]:
     """Get field info."""
@@ -263,7 +263,7 @@ def _parse_shape_args(name: str, field: FieldInfo) -> dict:
     elif origin is Literal:
         del kwargs["type"]
         kwargs["choices"] = get_args(field.annotation)
-    elif origin is Union:
+    elif origin is Union or isinstance(field.annotation, types.UnionType):
         kwargs["type"] = str  # TODO: Support union type
     return kwargs
 

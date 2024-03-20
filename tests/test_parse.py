@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from argparse import ArgumentError, ArgumentParser
 from enum import Enum
 from typing import Dict, List, Literal, Optional, Tuple, Union
@@ -123,6 +125,49 @@ def test_enum():
 def test_union():
     class Config(BaseModel):
         param: Union[str, int]
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    # param
+    a = parser._actions
+    assert "--param" in a[1].option_strings
+    assert "param" == a[1].dest
+    assert a[1].type is str
+    assert a[1].default is None
+    assert a[1].required
+    assert a[1].nargs is None
+    assert a[1].help is None
+
+    args = parser.parse_args(
+        [
+            "--param",
+            "value",
+        ]
+    )
+    assert Config(
+        **{
+            "param": "value",
+        }
+    ) == Config.model_validate(vars(args))
+
+    args = parser.parse_args(
+        [
+            "--param",
+            "10",
+        ]
+    )
+    assert Config(
+        **{
+            "param": "10",
+        }
+    ) == Config.model_validate(vars(args))
+
+
+def test_union_type():
+    # types.UnionType
+    class Config(BaseModel):
+        param: str | int
 
     parser = ArgumentParser()
     build_parser(parser, Config)
