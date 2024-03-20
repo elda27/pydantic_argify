@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pydantic-argify"
-version = "0.3.1"
+version = "0.3.2"
 description = "Build ArgumentParser from pydantic model."
 authors = ["elda27 <kaz.birdstick@gmail.com>"]
 license = "Apache-2.0"
@@ -9,14 +9,17 @@ packages = [{ include = "pydantic_argify" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pydantic = "^2.0.0"
-pydantic-settings = "^2.0.2"
+pydantic = ">=2.0.0"
+pydantic-settings = ">=2.0.2"
 
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.0.0"
 pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
+
+[tool.poe.tasks]
+test = "pytest --cov=pydantic_argify ."
 
 [build-system]
 requires = ["poetry-core"]
