@@ -136,6 +136,49 @@ def test_cli_sub_command(registry):
     assert count == 3
 
 
+def test_cli_sub_command_without_argument(registry):
+    class Config1(BaseModel):
+        name: str
+        age: int
+        is_active: bool
+
+    count = 0
+
+    @sub_command("launch1")
+    def launch1(config: Config1):
+        nonlocal count
+        count += 1
+        print(config)
+
+    @sub_command("launch2")
+    def launch2():
+        nonlocal count
+        count += 2
+
+    from pydantic_argify.cli import _registry
+
+    assert len(_registry) == 2
+    assert "launch1" in _registry
+    assert _registry["launch1"] is launch1
+    assert "launch2" in _registry
+    assert _registry["launch2"] is launch2
+    assert count == 0
+    with context_args(
+        ["launch1", "--name", "test", "--age", "10", "--enable-is-active"]
+    ):
+        try:
+            main()
+        except SystemExit:
+            pass
+    assert count == 1
+    with context_args(["launch2"]):
+        try:
+            main()
+        except SystemExit:
+            pass
+    assert count == 3
+
+
 def test_entrypoint(registry):
     class Config(BaseModel):
         name: Union[str, None] = None

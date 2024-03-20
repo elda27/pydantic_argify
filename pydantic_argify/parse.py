@@ -65,6 +65,31 @@ class StoreKeywordParam(Action):
 
 
 def build_parser(
+    parser: ArgumentParser, model: Type[BaseModel] | None
+) -> ArgumentParser:
+    """Create argument parser from pydantic model.
+
+    Parameters
+    ----------
+    parser : ArgumentParser
+        argument parser object
+    model : Type[BaseModel] | None
+        BaseModel class
+
+    Returns
+    -------
+    ArgumentParser
+        argument parser object
+    """
+    if model is not None:
+        # build parser from model
+        return build_parser_impl(parser, model)
+    else:
+        # do nothing
+        return parser
+
+
+def build_parser_impl(
     parser: ArgumentParser,
     model: Type[BaseModel],
     excludes: List[str] = [],
@@ -110,7 +135,7 @@ def build_parser(
             and isinstance(field.annotation, type)
             and issubclass(field.annotation, BaseModel)
         ):
-            build_parser(
+            build_parser_impl(
                 parser,
                 field.annotation,
                 excludes=excludes,
@@ -209,16 +234,18 @@ def _parse_shape_args(name: str, field: FieldInfo) -> dict:
     kwargs["type"] = field.annotation
     origin = get_origin(field.annotation)
     # field.discriminator
-    if field.annotation is None or origin is None:
+    if field.annotation is None:
         # No annotation provieded but this case is not expected.
         kwargs["type"] = str
     elif origin is list or origin is set:
+        # list
         kwargs["type"] = get_args(field.annotation)[0]
         if field.is_required():
             kwargs["nargs"] = "+"
         else:
             kwargs["nargs"] = "*"
     elif origin is dict or origin is Mapping:
+        # dictionary
         kwargs["action"] = StoreKeywordParam
         kwargs["type"] = str
         if field.is_required():
@@ -226,10 +253,12 @@ def _parse_shape_args(name: str, field: FieldInfo) -> dict:
         else:
             kwargs["nargs"] = "*"
     elif origin is tuple:
+        # tuple
         args = get_args(field.annotation)
         kwargs["type"] = args[0]
         kwargs["nargs"] = len(args)
     elif origin is type and issubclass(field.annotation, Enum):
+        # enum
         kwargs["choices"] = list(field.annotation)
     elif origin is Literal:
         del kwargs["type"]

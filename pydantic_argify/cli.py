@@ -12,7 +12,7 @@ from pydantic_argify.parse import build_parser
 _registry: Dict[Union[str, None], Tuple[Callable[[BaseModel], None]]] = {}
 
 
-def get_command_model(func: Callable[[BaseModel], None]) -> Type[BaseModel]:
+def get_command_model(func: Callable[[BaseModel], None]) -> Type[BaseModel]|None:
     """Get model from command function
 
     Parameters
@@ -26,7 +26,11 @@ def get_command_model(func: Callable[[BaseModel], None]) -> Type[BaseModel]:
         parsed type
     """
     spec = inspect.getfullargspec(func)
-    return spec.annotations[spec.args[0]]
+    if len(spec.args) == 0:
+        # No argument
+        return None
+    else:
+        return spec.annotations[spec.args[0]]
 
 
 def main():
@@ -51,7 +55,12 @@ def main():
     kwargs = vars(args)
     callback = _registry[args._command]
     del kwargs["_command"]
-    callback(get_command_model(callback)(**kwargs))
+
+    model_type = get_command_model(callback)
+    if model_type is not None:
+        callback(model_type(**kwargs))
+    else:
+        callback()
 
 
 def entrypoint(func: Any) -> ContextManager[None]:
