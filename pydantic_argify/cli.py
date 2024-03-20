@@ -66,12 +66,15 @@ def entrypoint(func: Any) -> ContextManager[None]:
     -------
         @entrypoint
         def main():
+            # You can initialization such as logging, etc.
             print("Before building argument parsers!")
             try:
                 yield
             except Exception as e:
+                # You can handle exceptions here
                 print("Error hamdling!", e)
             finally:
+                # You can something finalization here
                 print("End!")
 
     """
