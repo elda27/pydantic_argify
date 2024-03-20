@@ -9,6 +9,12 @@ class CliConfig(ConfigDict):
     cli_disable_prefix: Union[str, Dict[str, str]]
 
 
+CliConfigDict = CliConfig
+
+
 class EnvCliConfig(SettingsConfigDict):
     cli_enable_prefix: Union[str, Dict[str, str]]
     cli_disable_prefix: Union[str, Dict[str, str]]
+
+
+EnvCliConfigDict = EnvCliConfig
