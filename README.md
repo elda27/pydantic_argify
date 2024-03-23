@@ -16,7 +16,8 @@ For instance, handling nested sub-parsers like `aws s3 cp <some options>`
 or supporting nested Pydantic models has been a challenge in existing solutions. 
 This library overcomes these limitations, allowing you to effortlessly incorporate intricate functionalities.
 
-```python
+```
+pip install pydantic-argify
 ```
 
 ## Example 1
