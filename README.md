@@ -8,6 +8,45 @@
 
 Build ArgumentParser from pydantic model.
 
+## Getting started
+See ./examples/00_getting_started.py
+```python
+from pydantic import BaseModel, Field
+from pydantic_argify import sub_command, main
+
+class ConfigCommand1(BaseModel):
+    string: str = Field(description="string parameter")
+    integer: int = Field(description="integer parameter")
+
+class ConfigCommand2(BaseModel):
+    string: str = Field(description="string parameter")
+
+@sub_command("command1")
+def command1(config: ConfigCommand1):
+    print(config)
+
+@sub_command("command2")
+def command2(config: ConfigCommand2):
+    print(config)
+
+if __name__ == "__main__":
+    main()
+```
+
+```bash
+$ poetry run python -m examples.00_getting_started command1 -h
+usage: 00_getting_started.py command1 [-h] --string STRING --integer INTEGER
+
+options:
+  -h, --help            show this help message and exit
+
+ConfigCommand1:
+  --string STRING, -s STRING
+                        string parameter
+  --integer INTEGER, -i INTEGER
+                        integer parameter
+```
+
 ## What's difference with other projects.
 This project is dedicated to crafting an argument parser based on the Pydantic model.
 Unlike many other projects where the ArgumentParser functionality is concealed within the library, 
@@ -16,10 +55,7 @@ For instance, handling nested sub-parsers like `aws s3 cp <some options>`
 or supporting nested Pydantic models has been a challenge in existing solutions. 
 This library overcomes these limitations, allowing you to effortlessly incorporate intricate functionalities.
 
-```python
-```
-
-## Example 1
+### Example 1
 
 ```python
 from argparse import ArgumentParser
@@ -48,7 +84,7 @@ Config:
                         a required integer
 ```
 
-## Example 2
+### Example 2
 
 ```python
 from argparse import ArgumentParser
