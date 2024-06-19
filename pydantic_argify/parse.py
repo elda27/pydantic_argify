@@ -165,7 +165,7 @@ def build_parser_impl(
         else:
             _parser = parser
 
-        kwargs["help"] = field.description
+        kwargs["help"] = field.title or field.description
         # Set option args
         if field.annotation is bool:
             # Special case for boolean
