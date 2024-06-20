@@ -9,6 +9,8 @@
 Build ArgumentParser from pydantic model.
 
 ## Getting started
+### High level api
+
 See ./examples/00_getting_started.py
 ```python
 from pydantic import BaseModel, Field
@@ -47,16 +49,7 @@ ConfigCommand1:
                         integer parameter
 ```
 
-## What's difference with other projects.
-This project is dedicated to crafting an argument parser based on the Pydantic model.
-Unlike many other projects where the ArgumentParser functionality is concealed within the library, 
-this tool aims to simplify its use, even in complex scenarios. 
-For instance, handling nested sub-parsers like `aws s3 cp <some options>` 
-or supporting nested Pydantic models has been a challenge in existing solutions. 
-This library overcomes these limitations, allowing you to effortlessly incorporate intricate functionalities.
-
-### Example 1
-
+### Low level api
 ```python
 from argparse import ArgumentParser
 from pydantic import BaseModel, Field
@@ -84,8 +77,15 @@ Config:
                         a required integer
 ```
 
-### Example 2
+## What's difference with other projects.
+This project is dedicated to crafting an argument parser based on the Pydantic model.
+Unlike many other projects where the ArgumentParser functionality is concealed within the library, 
+this tool aims to simplify its use, even in complex scenarios. 
+For instance, handling nested sub-parsers like `aws s3 cp <some options>` 
+or supporting nested Pydantic models has been a challenge in existing solutions. 
+This library overcomes these limitations, allowing you to effortlessly incorporate intricate functionalities.
 
+### Example 
 ```python
 from argparse import ArgumentParser
 from pydantic import BaseModel, Field
@@ -115,6 +115,25 @@ positional arguments:
 
 optional arguments:
   -h, --help    show this help message and exit
+```
+
+## Nested config
+See: ./examples/06_nested_field
+
+```bash
+$ python -m examples.06_nested_field -h
+usage: 06_nested_field.py [-h] --name NAME --child.name CHILD.NAME [--child.age CHILD.AGE] --child.is-active CHILD.IS_ACTIVE
+
+options:
+  -h, --help            show this help message and exit
+
+Config:
+  --name NAME, -n NAME
+
+ChildConfig:
+  --child.name CHILD.NAME, -c CHILD.NAME
+  --child.age CHILD.AGE
+  --child.is-active CHILD.IS_ACTIVE
 ```
 
 ## Additional config

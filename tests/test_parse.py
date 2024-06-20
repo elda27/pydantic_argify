@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import pytest
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from pydantic_argify import build_parser
 from pydantic_argify.parse import get_groupby_field_names

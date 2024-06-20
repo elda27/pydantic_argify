@@ -1,11 +1,38 @@
+import json
+import types
 from argparse import Action, ArgumentParser
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Dict, List, Type, Union, get_args, get_origin, Literal, Mapping
+from typing import Any, Dict, List, Literal, Mapping, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo, PydanticUndefined
-import types
+
+
+class NestedFieldStoreAction(Action):
+    def __init__(self, option_strings, dest: str, **kwargs):
+        super().__init__(option_strings, dest, **kwargs)
+        if self.dest is None:
+            if isinstance(option_strings, str):
+                self._field_names = option_strings.strip("-").split(".")
+            elif isinstance(option_strings, (list, tuple)):
+                self._field_names = option_strings[0].strip("-").split(".")
+            else:
+                raise ValueError("Unknown dest format")
+        else:
+            self._field_names = self.dest.split(".")
+
+    def __call__(
+        self, parser: ArgumentParser, namespace: Any, values, option_string=None
+    ):
+
+        field = getattr(namespace, self._field_names[0], None)
+        if field is None:
+            setattr(namespace, self._field_names[0], {})
+            field = getattr(namespace, self._field_names[0])
+        for field_name in self._field_names[1:]:
+            field[field_name] = self.type(values)
+
 
 def get_model_field(model: Type[BaseModel]) -> Dict[str, FieldInfo]:
     """Get field info."""
@@ -97,6 +124,9 @@ def build_parser_impl(
     groupby_inherit: bool = True,
     exclude_truncated_args: List[str] = ["-h"],
     parse_nested_model: bool = True,
+    name_prefix: str | None = None,
+    naming_separator: str = "-",
+    action: type[Action] | None = None,
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
 
@@ -109,13 +139,28 @@ def build_parser_impl(
     excludes : List[str], optional
         Exclude field, by default []
     auto_truncate : bool, optional
-        Enable truncated parameter such as `-h`, by default True
+        Enable truncated parameter such as `-h` from a field of `have_fun`, by default True
     groupby_inherit: bool, optional
         If True, inherited basemodels are grouped by class name, by default True
     exclude_truncated_args: List[str], optional
         Exclude truncated arguments, by default ["-h"]
+        If list contains `-h`, `--have-fun` don't create truncated argument `-h` from have_fun.
     parse_nested_model: bool
         If True, nested model is also parsed, by default True
+        ```python
+        class NestedModel(BaseModel):
+            nested_field: str
+        class Model(BaseModel):
+            nested: NestedModel
+        ```
+        In this case, `--nested.nested-field` is created.
+    name_prefix: str | None, optional
+        Prefix of the argument name, by default None
+        --{name_prefix}{field_name} is used if name_prefix is not None
+    naming_separator: str, optional
+        Separator of the argument name, by default "-"
+    action: Action | None, optional
+        Action object for argument parser, by default None
     Returns
     -------
     ArgumentParser
@@ -130,11 +175,16 @@ def build_parser_impl(
         if name in excludes:
             continue
 
+        # If nested model is enabled, parse it
         if (
             parse_nested_model
             and isinstance(field.annotation, type)
             and issubclass(field.annotation, BaseModel)
         ):
+            if name_prefix is not None:
+                name_prefix = ".".join([name_prefix, name]) + "."
+            else:
+                name_prefix = name + "."
             build_parser_impl(
                 parser,
                 field.annotation,
@@ -142,10 +192,12 @@ def build_parser_impl(
                 groupby_inherit=True,
                 exclude_truncated_args=exclude_truncated_args,
                 parse_nested_model=parse_nested_model,
+                name_prefix=name_prefix,
+                action=NestedFieldStoreAction,
             )
             continue
 
-        kwargs: dict[str, Any] = {}
+        kwargs: dict[str, Any] = {"action": action}
 
         # Set option of multiple arguments
         kwargs.update(**_parse_shape_args(name, field))
@@ -166,8 +218,8 @@ def build_parser_impl(
             _parser = parser
 
         kwargs["help"] = field.description or field.title
-        # Set option args
-        if field.annotation is bool:
+        # Set option args, if not exists extra action
+        if kwargs.get("action") is None and field.annotation is bool:
             # Special case for boolean
             del kwargs["type"]
             kwargs["dest"] = name
@@ -175,16 +227,32 @@ def build_parser_impl(
             if field.is_required():
                 # Create both enable and disable option
                 _add_both_options(
-                    _parser, name, field, kwargs, config=model.model_config
+                    _parser,
+                    name,
+                    field,
+                    kwargs,
+                    config=model.model_config,
+                    naming_separator=naming_separator,
                 )
             else:
                 # Create either one option.
                 _add_either_option(
-                    _parser, name, field, kwargs, config=model.model_config
+                    _parser,
+                    name,
+                    field,
+                    kwargs,
+                    config=model.model_config,
+                    naming_separator=naming_separator,
                 )
         else:
             # default case for other types
-            args = get_cli_names(name, field, model_config, prefix="--")
+            args = get_cli_names(
+                name,
+                field,
+                model_config,
+                naming_separator=naming_separator,
+                prefix=f"--{name_prefix or ''}",
+            )
             # Set truncateiated parameter
             if auto_truncate:
                 truncate_arg = f"-{args[0].strip('-')[0]}"
@@ -202,7 +270,11 @@ def build_parser_impl(
 
 
 def get_cli_names(
-    name: str, field: FieldInfo, model_config: ConfigDict, prefix: str = ""
+    name: str,
+    field: FieldInfo,
+    model_config: ConfigDict,
+    naming_separator: str,
+    prefix: str = "",
 ) -> List[str]:
     """Create cli string from field name.
 
@@ -224,8 +296,8 @@ def get_cli_names(
     if names is None:
         names = []
         if field.alias is not None:
-            names.append(prefix + field.alias.replace("_", "-"))
-        names.append(prefix + name.replace("_", "-"))
+            names.append(prefix + field.alias.replace("_", naming_separator))
+        names.append(prefix + name.replace("_", naming_separator))
     return names
 
 
@@ -274,6 +346,7 @@ def _add_both_options(
     field: FieldInfo,
     kwargs: Dict[str, Any],
     config: ConfigDict,
+    naming_separator: str,
 ):
     mutual = parser.add_mutually_exclusive_group(required=True)
 
@@ -281,6 +354,7 @@ def _add_both_options(
         name,
         field,
         config,
+        naming_separator=naming_separator,
         prefix=_get_extra(field, config, "cli_enable_prefix", "--enable-"),
     )
     kwargs["action"] = "store_true"
@@ -292,6 +366,7 @@ def _add_both_options(
         name,
         field,
         config,
+        naming_separator=naming_separator,
         prefix=_get_extra(field, config, "cli_disable_prefix", "--disable-"),
     )
     kwargs["action"] = "store_false"
@@ -307,13 +382,17 @@ def _add_either_option(
     field: FieldInfo,
     kwargs: Dict[str, Any],
     config: ConfigDict,
+    naming_separator: str,
 ):
     if kwargs["default"]:
         args = get_cli_names(
             name,
             field,
             config,
-            prefix=_get_extra(field, config, "cli_disable_prefix", "--disable-"),
+            naming_separator=naming_separator,
+            prefix=_get_extra(
+                field, config, "cli_disable_prefix", f"--disable{naming_separator}"
+            ),
         )
         kwargs["action"] = "store_false"
     else:
@@ -321,7 +400,10 @@ def _add_either_option(
             name,
             field,
             config,
-            prefix=_get_extra(field, config, "cli_enable_prefix", "--enable-"),
+            naming_separator=naming_separator,
+            prefix=_get_extra(
+                field, config, "cli_enable_prefix", f"--enable{naming_separator}"
+            ),
         )
         kwargs["action"] = "store_true"
     parser.add_argument(
