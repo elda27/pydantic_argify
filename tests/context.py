@@ -22,5 +22,9 @@ def context_args(args: List[str], with_prog_name: bool = False):
         sys.argv = [orig_argv[0], *args]
     try:
         yield
+    except SystemExit:
+        pass  # Ignore
+    except Exception:
+        raise
     finally:
         sys.argv = orig_argv

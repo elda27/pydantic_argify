@@ -12,7 +12,7 @@ from pydantic_argify.parse import build_parser
 _registry: Dict[Union[str, None], Tuple[Callable[[BaseModel], None]]] = {}
 
 
-def get_command_model(func: Callable[[BaseModel], None]) -> Type[BaseModel]|None:
+def get_command_model(func: Callable[[BaseModel], None]) -> Type[BaseModel] | None:
     """Get model from command function
 
     Parameters
@@ -120,6 +120,8 @@ def command(func: Any):
         string='Hello', integer=1
     """
     if len(_registry) > 0:
+        if None in _registry and _registry[None] is func:
+            return func  # Already registered
         raise ValueError("Only one command is allowed.")
     _registry[None] = func
     return func
@@ -130,6 +132,8 @@ def sub_command(name: str):
 
     def _(func: Any):
         if name in _registry:
+            if _registry[name] is func:
+                return func  # Already registered
             raise ValueError("Command name is already used.")
         _registry[name] = func
         return func
