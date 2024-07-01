@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
 from pydantic_argify import build_parser
 
@@ -11,9 +11,15 @@ def test_nested_model():
         age: int = Field(10)
         is_active: bool
 
+    class ChildConfig2(BaseModel):
+        name: str
+        age: int = Field(10)
+        is_active: bool
+
     class Config(BaseModel):
         name: str
         child: ChildConfig
+        child2: ChildConfig2 | None = Field(None)
 
     parser = ArgumentParser()
     build_parser(parser, Config)
@@ -63,3 +69,50 @@ def test_nested_model():
             "child": {"name": "child_test", "age": 10, "is_active": True},
         }
     ) == Config.model_validate(vars(args))
+
+
+def test_multiple_config():
+    class TwitterConfig(BaseModel):
+        consumer_key: SecretStr | None = Field(None)
+        consumer_secret: SecretStr | None = Field(None)
+        access_token: SecretStr | None = Field(None)
+        access_token_secret: SecretStr | None = Field(None)
+        search_query: str = Field(description="Search query for Twitter API")
+
+    class MisskeyConfig(BaseModel):
+        host: str = Field(description="Misskey host")
+        token: SecretStr = Field(description="Misskey token")
+        search_query: str = Field(description="Search query for Misskey API")
+
+    class Config(BaseModel):
+        dest: str
+        twitter: TwitterConfig
+        misskey: MisskeyConfig
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    a = parser._actions
+    # Config.dest
+    assert "--dest" in a[1].option_strings
+    assert "dest" == a[1].dest
+    assert a[1].type is str
+    assert a[1].default is None
+    assert a[1].required
+    assert a[1].help is None
+    # Config.twitter.consumer_key
+    assert "--twitter.consumer-key" in a[2].option_strings
+    # Config.twitter.consumer_secret
+    assert "--twitter.consumer-secret" in a[3].option_strings
+    # Config.twitter.access_token
+    assert "--twitter.access-token" in a[4].option_strings
+    # Config.twitter.access_token_secret
+    assert "--twitter.access-token-secret" in a[5].option_strings
+    # Config.twitter.search_query
+    assert "--twitter.search-query" in a[6].option_strings
+    # Config.misskey.host
+    assert "--misskey.host" in a[7].option_strings
+    # Config.misskey.token
+    assert "--misskey.token" in a[8].option_strings
+    # Config.misskey.search_query
+    assert "--misskey.search-query" in a[9].option_strings

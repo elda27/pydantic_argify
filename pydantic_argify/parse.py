@@ -181,6 +181,7 @@ def build_parser_impl(
             and isinstance(field.annotation, type)
             and issubclass(field.annotation, BaseModel)
         ):
+            orig_name_prefix = None
             if name_prefix is not None:
                 name_prefix = ".".join([name_prefix, name]) + "."
             else:
@@ -195,6 +196,7 @@ def build_parser_impl(
                 name_prefix=name_prefix,
                 action=NestedFieldStoreAction,
             )
+            name_prefix = orig_name_prefix
             continue
 
         kwargs: dict[str, Any] = {"action": action}

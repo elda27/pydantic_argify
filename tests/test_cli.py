@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 from pydantic_argify import command, entrypoint, main, sub_command
 from pydantic_argify.cli import get_command_model
-
 from tests.context import context_args
 
 
