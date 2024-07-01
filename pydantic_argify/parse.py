@@ -169,7 +169,7 @@ def build_parser_impl(
     model_config = model.model_config
     groups = get_groupby_field_names(model) if groupby_inherit else {}
     cache_parsers = {}
-    exist_truncate_args = deepcopy(exclude_truncated_args)
+    exist_truncate_args = exclude_truncated_args
     _parser: Any
     for name, field in get_model_field(model).items():
         if name in excludes:
