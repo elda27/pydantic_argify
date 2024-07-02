@@ -55,7 +55,7 @@ def main(**kwargs):
     # Build parser
     parser = ArgumentParser()
     if len(_registry) == 1 and None in _registry:
-        build_parser(parser, get_command_model(_registry[None]))
+        build_parser(parser, get_command_model(_registry[None]), **kwargs)
         parser.set_defaults(_command=None)
     else:
         subparsers = parser.add_subparsers(dest="_command")
