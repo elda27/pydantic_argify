@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pydantic-argify"
-version = "0.4.2"
+version = "0.4.3"
 description = "Build ArgumentParser from pydantic model."
 authors = ["elda27 <kaz.birdstick@gmail.com>"]
 license = "Apache-2.0"
