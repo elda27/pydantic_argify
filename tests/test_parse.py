@@ -662,3 +662,26 @@ def test_alias():
     # Test parse
     args = parser.parse_args(["--param-alias", "value"])
     assert Config(**{"param_alias": "value"}) == Config.model_validate(vars(args))
+
+
+def test_build_parser_with_args():
+    class Config(BaseModel):
+        param_1: str = Field(alias="param_alias")
+
+    parser = ArgumentParser()
+    build_parser(parser, Config, naming_separator="_")
+    a = parser._actions
+
+    # param
+    assert "--param_1" in a[1].option_strings
+    assert "--param_alias" in a[1].option_strings
+    assert "param_alias" == a[1].dest
+    assert a[1].type is str
+    assert a[1].default is None
+    assert a[1].required
+    assert a[1].nargs is None
+    assert a[1].help is None
+
+    # Test parse
+    args = parser.parse_args(["--param_alias", "value"])
+    assert Config(**{"param_alias": "value"}) == Config.model_validate(vars(args))
