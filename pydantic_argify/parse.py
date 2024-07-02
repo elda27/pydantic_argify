@@ -1,9 +1,21 @@
 import json
 import types
+import typing
 from argparse import Action, ArgumentParser
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Dict, List, Literal, Mapping, Type, Union, get_args, get_origin
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Mapping,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+    overload,
+)
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo, PydanticUndefined
@@ -91,8 +103,31 @@ class StoreKeywordParam(Action):
         setattr(namespace, self.dest, param_dict)
 
 
+if typing.TYPE_CHECKING:
+
+    @overload
+    def build_parser(
+        parser: ArgumentParser,
+        model: Type[BaseModel] | None,
+        *,
+        excludes: List[str] = [],
+        auto_truncate: bool = True,
+        groupby_inherit: bool = True,
+        exclude_truncated_args: List[str] = ["-h"],
+        parse_nested_model: bool = True,
+        naming_separator: str = "-",
+    ) -> ArgumentParser: ...
+
+    @overload
+    def build_parser(
+        parser: ArgumentParser,
+        model: Type[BaseModel] | None,
+        **kwargs,
+    ) -> ArgumentParser: ...
+
+
 def build_parser(
-    parser: ArgumentParser, model: Type[BaseModel] | None
+    parser: ArgumentParser, model: Type[BaseModel] | None, **kwargs
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
 
@@ -110,7 +145,7 @@ def build_parser(
     """
     if model is not None:
         # build parser from model
-        return build_parser_impl(parser, model)
+        return build_parser_impl(parser, model, **kwargs)
     else:
         # do nothing
         return parser

@@ -1,8 +1,9 @@
 import inspect
+import typing
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Callable, Dict, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Tuple, Type, Union, overload
 
 from pydantic import BaseModel
 from typing_extensions import ContextManager
@@ -33,7 +34,23 @@ def get_command_model(func: Callable[[BaseModel], None]) -> Type[BaseModel] | No
         return spec.annotations[spec.args[0]]
 
 
-def main():
+if typing.TYPE_CHECKING:
+
+    @overload
+    def main(
+        excludes: List[str] = [],
+        auto_truncate: bool = True,
+        groupby_inherit: bool = True,
+        exclude_truncated_args: list[str] = ["-h"],
+        parse_nested_model: bool = True,
+        naming_separator: str = "-",
+    ): ...
+
+    @overload
+    def main(**kwargs): ...
+
+
+def main(**kwargs):
     """Start application"""
     # Build parser
     parser = ArgumentParser()
@@ -44,7 +61,7 @@ def main():
         subparsers = parser.add_subparsers(dest="_command")
         for command, callback in _registry.items():
             subparser = subparsers.add_parser(command)
-            build_parser(subparser, get_command_model(callback))
+            build_parser(subparser, get_command_model(callback), **kwargs)
     args = parser.parse_args()
 
     if args._command not in _registry:
