@@ -229,6 +229,7 @@ def build_parser_impl(
                 exclude_truncated_args=exclude_truncated_args,
                 parse_nested_model=parse_nested_model,
                 name_prefix=name_prefix,
+                naming_separator=naming_separator,
                 action=NestedFieldStoreAction,
             )
             name_prefix = orig_name_prefix
