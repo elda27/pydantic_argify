@@ -25,32 +25,49 @@ def test_nested_model():
     build_parser(parser, Config)
 
     a = parser._actions
-    # Config.name
+    # name
     assert "--name" in a[1].option_strings
     assert "name" == a[1].dest
     assert a[1].type is str
     assert a[1].default is None
     assert a[1].required
     assert a[1].help is None
-    # Config.name
+    # child.name
     assert "--child.name" in a[2].option_strings
     assert a[2].type is str
     assert a[2].default is None
     assert a[2].required
     assert a[2].help is None
-    # Config.age
+    # child.age
     assert "--child.age" in a[3].option_strings
     assert a[3].type is int
     assert a[3].default == 10
     assert not a[3].required
     assert a[3].help is None
-    # Config.is_active
+    # child.is_active
     assert "--child.is-active" in a[4].option_strings
     assert a[4].type is bool
     assert a[4].default is None
     assert a[4].required
     assert a[4].help is None
-
+    # child2.name
+    assert "--child2.name" in a[5].option_strings
+    assert a[5].type is str
+    assert a[5].default is None
+    assert not a[5].required
+    assert a[5].help is None
+    # child2.age
+    assert "--child2.age" in a[6].option_strings
+    assert a[6].type is int
+    assert a[6].default == 10
+    assert not a[6].required
+    assert a[6].help is None
+    # child2.is_active
+    assert "--child2.is-active" in a[7].option_strings
+    assert a[7].type is bool
+    assert a[7].default is None
+    assert not a[7].required
+    assert a[7].help is None
     args = parser.parse_args(
         [
             "--name",

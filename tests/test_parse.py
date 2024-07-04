@@ -8,7 +8,7 @@ import pytest
 from pydantic import BaseModel, ConfigDict, Field
 
 from pydantic_argify import build_parser
-from pydantic_argify.parse import get_groupby_field_names
+from pydantic_argify.parse import _contain_base_model, get_groupby_field_names
 
 
 def test_tuple():
@@ -685,3 +685,18 @@ def test_build_parser_with_args():
     # Test parse
     args = parser.parse_args(["--param_alias", "value"])
     assert Config(**{"param_alias": "value"}) == Config.model_validate(vars(args))
+
+
+def test_contain_base_model():
+    class SubConfig(BaseModel):
+        param: str
+
+    class Config(BaseModel):
+        param: str
+        submodel: SubConfig
+        opt_submodel: SubConfig | None = None
+
+    assert _contain_base_model(Config)
+    assert not _contain_base_model(Config.model_fields["param"].annotation)
+    assert _contain_base_model(Config.model_fields["submodel"].annotation)
+    assert _contain_base_model(Config.model_fields["opt_submodel"].annotation)

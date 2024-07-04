@@ -161,6 +161,7 @@ def build_parser_impl(
     parse_nested_model: bool = True,
     name_prefix: str | None = None,
     naming_separator: str = "-",
+    required: bool | None = None,
     action: type[Action] | None = None,
 ) -> ArgumentParser:
     """Create argument parser from pydantic model.
@@ -194,6 +195,8 @@ def build_parser_impl(
         --{name_prefix}{field_name} is used if name_prefix is not None
     naming_separator: str, optional
         Separator of the argument name, by default "-"
+    required: bool, optional
+        If True, force to set required flag, by default True
     action: Action | None, optional
         Action object for argument parser, by default None
     Returns
@@ -213,8 +216,12 @@ def build_parser_impl(
         # If nested model is enabled, parse it
         if (
             parse_nested_model
-            and isinstance(field.annotation, type)
-            and issubclass(field.annotation, BaseModel)
+            and (
+                # UnionType is not type
+                isinstance(field.annotation, type)
+                or isinstance(field.annotation, types.UnionType)
+            )
+            and _contain_base_model(field.annotation)
         ):
             orig_name_prefix = None
             if name_prefix is not None:
@@ -223,13 +230,14 @@ def build_parser_impl(
                 name_prefix = name + "."
             build_parser_impl(
                 parser,
-                field.annotation,
+                _reveal_base_model(field.annotation),
                 excludes=excludes,
                 groupby_inherit=True,
                 exclude_truncated_args=exclude_truncated_args,
                 parse_nested_model=parse_nested_model,
                 name_prefix=name_prefix,
                 naming_separator=naming_separator,
+                required=False if not field.is_required() else None,
                 action=NestedFieldStoreAction,
             )
             name_prefix = orig_name_prefix
@@ -300,7 +308,7 @@ def build_parser_impl(
 
             _parser.add_argument(
                 *args,
-                required=field.is_required(),
+                required=field.is_required() if required is None else required,
                 **kwargs,
             )
 
@@ -468,3 +476,19 @@ def _get_extra(
         return config.get(key, default)
     else:
         return field.json_schema_extra.get(key, default)
+
+
+def _contain_base_model(t: type) -> bool:
+    origin = get_origin(t)
+    if origin is Union or isinstance(t, types.UnionType):
+        return any(_contain_base_model(x) for x in get_args(t))
+    return issubclass(t, BaseModel)
+
+
+def _reveal_base_model(t: type) -> Type[BaseModel]:
+    origin = get_origin(t)
+    if origin is Union or isinstance(t, types.UnionType):
+        for x in get_args(t):
+            if issubclass(x, BaseModel):
+                return x
+    return t
