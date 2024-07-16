@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import datetime
 from argparse import ArgumentError, ArgumentParser
 from enum import Enum
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from pydantic_argify import build_parser
 from pydantic_argify.parse import _contain_base_model, get_groupby_field_names
@@ -423,6 +424,57 @@ def test_boolean_enable():
         }
     ) == Config.model_validate(vars(args))
 
+
+def test_datetime_model():
+    class Config(BaseModel):
+        target_at: datetime.datetime
+
+    now = datetime.datetime.now()
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    args = parser.parse_args(["--target-at", now.isoformat()])
+
+    assert Config(
+        **{
+            "target_at": now,
+        }
+    ) == Config.model_validate(vars(args))
+
+def test_date_model():
+    class Config(BaseModel):
+        target_on: datetime.date
+
+    today = datetime.date.today()
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    args = parser.parse_args(["--target-on", today.isoformat()])
+
+    assert Config(
+        **{
+            "target_on": today,
+        }
+    ) == Config.model_validate(vars(args))
+
+def test_optional_datetime():
+    class Config(BaseModel):
+        target_on: datetime.date | None
+
+    today = datetime.date.today()
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    args = parser.parse_args(["--target-on", today.isoformat()])
+
+    assert Config(
+        **{
+            "target_on": today,
+        }
+    ) == Config.model_validate(vars(args))
 
 def test_boolean_disable():
     class Config(BaseModel):

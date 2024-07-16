@@ -1,8 +1,7 @@
-import json
+import datetime
 import types
 import typing
 from argparse import Action, ArgumentParser
-from copy import deepcopy
 from enum import Enum
 from typing import (
     Any,
@@ -350,6 +349,13 @@ def get_cli_names(
 def _parse_shape_args(name: str, field: FieldInfo) -> dict:
     kwargs: dict[str, Any] = {}
     kwargs["type"] = field.annotation
+
+    if kwargs["type"] is datetime.datetime:
+        kwargs["type"] = datetime.datetime.fromisoformat
+
+    elif kwargs["type"] is datetime.date:
+        kwargs["type"] = datetime.date.fromisoformat
+    
     origin = get_origin(field.annotation)
     # field.discriminator
     if field.annotation is None:
