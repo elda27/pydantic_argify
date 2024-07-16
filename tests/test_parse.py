@@ -442,6 +442,7 @@ def test_datetime_model():
         }
     ) == Config.model_validate(vars(args))
 
+
 def test_date_model():
     class Config(BaseModel):
         target_on: datetime.date
@@ -459,9 +460,10 @@ def test_date_model():
         }
     ) == Config.model_validate(vars(args))
 
+
 def test_optional_datetime():
     class Config(BaseModel):
-        target_on: datetime.date | None
+        target_on: Optional[datetime.date]
 
     today = datetime.date.today()
 
@@ -475,6 +477,7 @@ def test_optional_datetime():
             "target_on": today,
         }
     ) == Config.model_validate(vars(args))
+
 
 def test_boolean_disable():
     class Config(BaseModel):
