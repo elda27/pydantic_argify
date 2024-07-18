@@ -1,8 +1,7 @@
-import json
+import datetime
 import types
 import typing
 from argparse import Action, ArgumentParser
-from copy import deepcopy
 from enum import Enum
 from typing import (
     Any,
@@ -37,7 +36,6 @@ class NestedFieldStoreAction(Action):
     def __call__(
         self, parser: ArgumentParser, namespace: Any, values, option_string=None
     ):
-
         field = getattr(namespace, self._field_names[0], None)
         if field is None:
             setattr(namespace, self._field_names[0], {})
@@ -116,14 +114,16 @@ if typing.TYPE_CHECKING:
         exclude_truncated_args: List[str] = ["-h"],
         parse_nested_model: bool = True,
         naming_separator: str = "-",
-    ) -> ArgumentParser: ...
+    ) -> ArgumentParser:
+        ...
 
     @overload
     def build_parser(
         parser: ArgumentParser,
         model: Type[BaseModel] | None,
         **kwargs,
-    ) -> ArgumentParser: ...
+    ) -> ArgumentParser:
+        ...
 
 
 def build_parser(
@@ -350,6 +350,15 @@ def get_cli_names(
 def _parse_shape_args(name: str, field: FieldInfo) -> dict:
     kwargs: dict[str, Any] = {}
     kwargs["type"] = field.annotation
+
+    if kwargs["type"] in (
+        datetime.datetime,
+        datetime.time,
+        datetime.date,
+        datetime.timedelta,
+    ):
+        kwargs["type"] = str
+
     origin = get_origin(field.annotation)
     # field.discriminator
     if field.annotation is None:

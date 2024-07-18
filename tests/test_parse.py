@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import datetime
 from argparse import ArgumentError, ArgumentParser
 from enum import Enum
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from pydantic_argify import build_parser
 from pydantic_argify.parse import _contain_base_model, get_groupby_field_names
@@ -420,6 +421,96 @@ def test_boolean_enable():
     assert Config(
         **{
             "param": True,
+        }
+    ) == Config.model_validate(vars(args))
+
+
+@pytest.mark.parametrize(
+    "input_value,expected",
+    [
+        pytest.param(
+            "2022-01-01",
+            datetime.datetime(2022, 1, 1, 0, 0, 0),
+            id="date-str",
+        ),
+        pytest.param(
+            "2022-06-08T12:13:14",
+            datetime.datetime(2022, 6, 8, 12, 13, 14),
+            id="datetime-str",
+        ),
+        pytest.param(
+            "1000000000000",
+            datetime.datetime(2001, 9, 9, 1, 46, 40, tzinfo=datetime.timezone.utc),
+            id="timestamp-str",
+        ),
+        pytest.param(
+            "1654646400",
+            datetime.datetime(2022, 6, 8, tzinfo=datetime.timezone.utc),
+            id="timestamp-str2",
+        ),
+        pytest.param(
+            "1654646400.1234568",
+            datetime.datetime(
+                2022, 6, 8, 0, 0, 0, 123457, tzinfo=datetime.timezone.utc
+            ),
+            id="timestamp-str3",
+        ),
+    ],
+)
+def test_datetime_model(input_value: str, expected: datetime.datetime):
+    class Config(BaseModel):
+        target_at: datetime.datetime
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    args = parser.parse_args(["--target-at", input_value])
+
+    assert Config(
+        **{
+            "target_at": expected,
+        }
+    ) == Config.model_validate(vars(args))
+
+
+@pytest.mark.parametrize(
+    "input_value,expected",
+    [
+        pytest.param("2022-06-08", datetime.date(2022, 6, 8), id="str"),
+        pytest.param("1654646400", datetime.date(2022, 6, 8), id="int-as-str"),
+        pytest.param("1654646400.00", datetime.date(2022, 6, 8), id="float-as-str"),
+    ],
+)
+def test_date_model(input_value: str, expected: datetime.date):
+    class Config(BaseModel):
+        target_on: datetime.date
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    args = parser.parse_args(["--target-on", input_value])
+
+    assert Config(
+        **{
+            "target_on": expected,
+        }
+    ) == Config.model_validate(vars(args))
+
+
+def test_optional_datetime():
+    class Config(BaseModel):
+        target_on: Optional[datetime.date]
+
+    today = datetime.date.today()
+
+    parser = ArgumentParser()
+    build_parser(parser, Config)
+
+    args = parser.parse_args(["--target-on", today.isoformat()])
+
+    assert Config(
+        **{
+            "target_on": today,
         }
     ) == Config.model_validate(vars(args))
 
