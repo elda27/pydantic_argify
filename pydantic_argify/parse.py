@@ -18,7 +18,6 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo, PydanticUndefined
-from pydantic_core import SchemaValidator
 
 
 class NestedFieldStoreAction(Action):
@@ -352,11 +351,8 @@ def _parse_shape_args(name: str, field: FieldInfo) -> dict:
     kwargs: dict[str, Any] = {}
     kwargs["type"] = field.annotation
 
-    if kwargs["type"] is datetime.datetime:
-        kwargs["type"] = SchemaValidator({"type": "datetime"}).validate_python
-
-    elif kwargs["type"] is datetime.date:
-        kwargs["type"] = SchemaValidator({"type": "date"}).validate_python
+    if kwargs["type"] in (datetime.datetime, datetime.time, datetime.date):
+        kwargs["type"] = str
 
     origin = get_origin(field.annotation)
     # field.discriminator
