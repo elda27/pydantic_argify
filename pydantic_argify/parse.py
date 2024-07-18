@@ -351,7 +351,12 @@ def _parse_shape_args(name: str, field: FieldInfo) -> dict:
     kwargs: dict[str, Any] = {}
     kwargs["type"] = field.annotation
 
-    if kwargs["type"] in (datetime.datetime, datetime.time, datetime.date):
+    if kwargs["type"] in (
+        datetime.datetime,
+        datetime.time,
+        datetime.date,
+        datetime.timedelta,
+    ):
         kwargs["type"] = str
 
     origin = get_origin(field.annotation)
