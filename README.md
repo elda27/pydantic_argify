@@ -8,6 +8,7 @@
 
 Build ArgumentParser from pydantic model.
 This project focuses to solve when an application has too many parameters e.g. Machine Learning project.
+You can make structured configuration using pydantic.
 
 ## Getting started
 ### High level api
